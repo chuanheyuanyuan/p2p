@@ -1,0 +1,610 @@
+下面把上一个 PRD 进一步“工程化”：**先明确目标与框架**，再给出**软件架构设计**，最后给出**端到端计划与可直接执行的任务拆解**。所有任务都带上**产出/接口/依赖/验收标准**，既可独立执行，又与全局衔接顺畅，适合作为大模型编程时的输入切块。
+
+---
+
+## 1) 目标与框架
+
+### 1.1 北极星目标（12 个月）
+
+* **核心目标**：搭建一个可运营、可扩展的 P2P/现金贷平台，完成**注册→授信→申请→放款→账单/还款→催收→复借**的闭环，并具备二期扩展至**资金撮合**能力。
+* **成功指标（MVP 后 90 天）**
+
+  * 端到端转化：注册→申请 ≥ 35%，申请→放款 ≥ 20%
+  * 放款后首逾率（D0）≤ 40%，回调幂等错误 ≤ 0.1%
+  * 核心链路 P95 ≤ 200ms，放/还款可用性 ≥ 99.9%
+  * 业务看板与“平台每日统计/逾期迁移率/渠道统计/复借率”全上线
+
+### 1.2 能力框架（与 PRD 一致，工程化归类）
+
+* **用户域**：注册、登录、设备指纹、隐私授权、KYC（OCR/活体）
+* **风控域**：规则引擎、评分、命中日志、黑白名单、策略配置
+* **贷款域**：额度/期限与费率、申请&审批（机审/人审）、合同签署
+* **资金域**：放款与还款通道统一网关、通道回调、对账
+* **账务域**：双分录台账、结算、资金账户
+* **通知域**：短信/邮件/Push/WhatsApp 模板化触达
+* **催收域**：建案、分案、外呼/记录、PTP、绩效
+* **渠道域**：渠道链接、Kochava 归因、漏斗分析
+* **运营域**：后台管理（审批、电销、催收、配置、App 升级/包管理）
+* **数据域**：报表口径、实时事件流、离线数仓/OLAP
+* **P2P 域（2期）**：资金方账户、撮合、收益分配、信息披露
+
+---
+
+## 2) 软件架构设计
+
+### 2.1 技术选型
+
+* **前端**
+
+  * 移动端：**Flutter**（iOS/Android 一套），BFF 聚合接口
+  * 管理端：**React + Ant Design Pro**（与截图风格一致）
+* **后端**
+
+  * 业务微服务：**NestJS（TypeScript）**
+  * 风控引擎：**Python FastAPI**（规则/评分灵活）
+  * API 网关：**Kong / Nginx-Gateway**（鉴权、限流、灰度）
+  * 事件总线：**Kafka**（或 RabbitMQ）
+  * 存储：**PostgreSQL**（行存 OLTP）、**Redis**（会话/缓存）、**ClickHouse**（OLAP 报表，或先用 Postgres 物化视图过渡）
+  * 文件：**S3/MinIO**（证照/合同/录音）
+* **基础设施**
+
+  * 容器化：Docker，K8s（生产），Docker Compose（本地）
+  * CI/CD：GitHub Actions + ArgoCD
+  * 观测：Prometheus + Grafana + Loki，OpenTelemetry
+
+### 2.2 领域与服务边界（DDD/微服务）
+
+```
+[api-gateway]
+  ├── bff-mobile (聚合借款端数据)
+  └── bff-admin (聚合后台数据)
+
+核心服务：
+  user-svc        (用户/设备/授权/KYC 档案)
+  auth-svc        (OTP 登录/JWT)
+  risk-svc        (规则/评分/策略)
+  loan-svc        (贷款申请/审批/合同)
+  payment-svc     (放/还款网关、回调)
+  ledger-svc      (双分录台账/资金账户)
+  notify-svc      (短信/邮件/Push/WhatsApp)
+  collection-svc  (催收案件/分案/外呼/记录)
+  channel-svc     (渠道链接/Kochava 归因)
+  report-svc      (口径计算/数据取数)
+  admin-web       (React 前端)
+  mobile-app      (Flutter 前端)
+
+可选二期：
+  p2p-svc         (资金方、撮合、分润)
+```
+
+### 2.3 关键交互（文本拓扑）
+
+* **App 注册登录**：`mobile-app → bff-mobile → auth-svc/user-svc`
+* **KYC**：`mobile-app → user-svc (上传) → risk-svc（同步/异步校验）`
+* **申请审批**：`mobile-app → loan-svc → risk-svc（机审） → admin 审批（可选） → loan-svc`
+* **签约放款**：`loan-svc → contract(PDF S3) → payment-svc(disburse) → ledger-svc 入账 → loan-svc 状态 DISBURSED`
+* **还款**：`mobile-app → payment-svc(pay) → ledger-svc 入账 → loan-svc 更新账单`
+* **催收**：`loan-svc 产生 DUE/OVERDUE 事件 → collection-svc 建案/分案 → notify-svc 触达`
+* **报表**：`各服务事件 → Kafka → report-svc（ClickHouse）→ admin-web 可视化`
+
+### 2.4 接口契约（跨服务标准）
+
+* 统一 **REST+JSON**，服务间采用 **gRPC/REST** 均可，事件采用 **Kafka**
+* **幂等**：所有放/还款、合同签署、状态迁移均要求 `X-Idempotency-Key`
+* **统一鉴权**：JWT（Admin/Client 不同作用域）
+* **事件名**（例）：`USER_REGISTERED, KYC_PASSED, LOAN_APPLIED, LOAN_APPROVED, DISBURSED, REPAYMENT_POSTED, DUE_TODAY, OVERDUE_BUCKET_CHANGED, CASE_ASSIGNED`
+
+---
+
+## 3) 整体计划（里程碑与节奏）
+
+> 每个 Sprint 2 周，确保每个 Sprint 至少打通**一条可以演示的业务纵切**（从前端到后端与数据），利于持续验收。
+
+* **Sprint 0（2 周）**：基础设施与骨架
+* **Sprint 1（2 周）**：注册登录 & 设备指纹 & 用户资料壳
+* **Sprint 2（2 周）**：KYC（OCR/活体对接 stub）、风控规则引擎 MVP
+* **Sprint 3（2 周）**：申请/审批（机审+人审流） & 合同 PDF
+* **Sprint 4（2 周）**：放款网关（沙箱）& 台账入账 & 平台每日统计 v1
+* **Sprint 5（2 周）**：账单/还款（沙箱）& 通知中心 & 报表 v2
+* **Sprint 6（2 周）**：催收（建案/分案/工作台）& 逾期迁移率
+* **Sprint 7（2 周）**：渠道/Kochava & App 升级/包管理 & 运营配置
+* **Sprint 8（2 周）**：性能/安全/风控扩展 & 复借策略 & 上线准备
+* **Phase 2（4~6 周）**：外呼机器人/电销/对账完善/真通道切换
+* **Phase 3（6~8 周）**：P2P 资金方/撮合/分润
+
+---
+
+## 4) 任务拆解（可直接执行）
+
+> 下文采用 **Epic → Task** 结构；每个任务包含**核心内容/输入输出/接口/依赖/验收标准**。
+> 任务粒度适配大模型一次实现 200~400 行代码/1~2 个接口的复杂度；过大则再拆。
+
+### Epic A｜平台基础与 DevOps
+
+**A1. 仓库与代码骨架初始化**
+
+* **内容**：monorepo（pnpm workspace）或 multi-repo；创建 `mobile-app`、`admin-web`、`auth-svc`、`user-svc`、`loan-svc` 等空服务骨架，统一日志/错误码/中间件。
+* **接口**：无（健康检查 `/health`）。
+* **依赖**：无。
+* **验收**：`docker compose up` 本地启动所有骨架，/health 200。
+
+**A2. API 网关与鉴权中间件**
+
+* **内容**：Kong/NGINX，路由到各服务；JWT 校验、CORS、限流。
+* **接口**：`/api/* → 上游服务`
+* **依赖**：A1。
+* **验收**：携带/不携带 JWT 访问返回正确。
+
+**A3. CI/CD 与环境模板**
+
+* **内容**：GitHub Actions 构建/测试/镜像推送；K8s 部署清单；本地 `.env.example`。
+* **接口**：无。
+* **依赖**：A1。
+* **验收**：提交 PR 自动跑 lint/test/build。
+
+**A4. 事件总线与 SDK**
+
+* **内容**：Kafka 集群（本地用 Redpanda 也可），封装 producer/consumer SDK，统一事件 envelope。
+* **接口**：`emit(eventName, payload)` / `subscribe(topic)`
+* **依赖**：A1。
+* **验收**：示例服务成功收/发 `HELLO_EVENT`。
+
+---
+
+### Epic B｜认证与用户域
+
+**B1. OTP 登录接口（auth-svc）**
+
+* **内容**：`/auth/send_otp`、`/auth/login`，签发 JWT；频率限制；审计。
+* **输入/输出**：`{phone}`→`{request_id}`；`{phone, otp}`→`{token, userId}`
+* **依赖**：A2。
+* **验收**：正确签发/失效/重放保护。
+
+**B2. 用户与设备档案（user-svc）**
+
+* **内容**：`user`、`device_profile` 表与 CRUD；设备指纹上报。
+* **接口**：`POST /devices`、`GET /me`
+* **依赖**：B1。
+* **验收**：登录后能写入设备信息；后台可查询。
+
+**B3. 隐私授权与联系人采集**
+
+* **内容**：授权状态记录、联系人上传接口（加密与去重）。
+* **接口**：`POST /me/consents`、`POST /me/contacts`
+* **依赖**：B2。
+* **验收**：授权状态可回显；联系人条数与脱敏展示正确。
+
+**B4. KYC：OCR/活体对接（Stub）**
+
+* **内容**：上传证件图/活体视频 → 调用第三方（先 stub），保存 `kyc` 记录。
+* **接口**：`POST /kyc/ocr`、`POST /kyc/liveness`、`GET /kyc/status`
+* **依赖**：B2、A4（事件：`KYC_PASSED/FAILED`）。
+* **验收**：通过/失败路径与重试，图片落 S3。
+
+**B5. Admin 用户详情页（admin-web + bff-admin）**
+
+* **内容**：呈现用户基本/KYC/设备/联系人；与截图字段一致。
+* **接口**：`GET /admin/users/:id`（聚合 user-svc/risk-svc）
+* **依赖**：B2、B4。
+* **验收**：页面加载 ≤ 1s，字段脱敏。
+
+---
+
+### Epic C｜风控域
+
+**C1. 规则引擎 MVP（risk-svc）**
+
+* **内容**：DSL（IF/ELSE 命中）+ 白黑名单；输入为用户/设备/KYC/行为；输出 `score`、`decision`。
+* **接口**：`POST /risk/evaluate {userId, loanCandidate}` → `{decision, score, reasons[]}`
+* **依赖**：B2、B4。
+* **验收**：配置 3~5 条规则，返回可解释理由。
+
+**C2. 策略包与等级映射**
+
+* **内容**：Level1~5 与额度/期限/费率策略；后台可配置。
+* **接口**：`GET/POST /admin/risk/strategies`
+* **依赖**：C1、E1（产品/费率）。
+* **验收**：策略变更即时生效（缓存失效）。
+
+**C3. 命中日志与回溯**
+
+* **内容**：保存每次评估的输入/输出快照，用于审批页还原。
+* **接口**：`GET /admin/risk/logs?loanId=`
+* **依赖**：C1。
+* **验收**：审批页能看到详细命中项。
+
+---
+
+### Epic D｜贷款域
+
+**E1. 产品与费率模板（loan-svc）**
+
+* **内容**：额度区间/期限/费率/费用模板（JSON）；复借策略位。
+* **接口**：`GET /loan/products`（App 用）、`/admin/loan/products`（配置）
+* **依赖**：无。
+* **验收**：App 能拉取档位与费用明细计算一致。
+
+**E2. 申请创建与状态机**
+
+* **内容**：`loan` 表与状态（DRAFT→SUBMITTED…）；写入日志 `loan_event`。
+* **接口**：`POST /loan/apply` → `{loanId, status}`
+* **依赖**：B2、C1。
+* **验收**：提交后自动调用 risk-svc 得到机审结论。
+
+**E3. 审批（机审+人审）**
+
+* **内容**：机审通过则可跳过人工；人工接口与后台审批页。
+* **接口**：`POST /admin/loan/:id/manual_review {pass/reject, reason}`
+* **依赖**：E2、C1、B5。
+* **验收**：审批流转与审计日志完整。
+
+**E4. 合同 PDF 生成与签署**
+
+* **内容**：渲染合同（模板+变量），电子签（勾选/签名/验证码），PDF 入 S3。
+* **接口**：`POST /loan/:id/contract/sign` → `fileUrl`
+* **依赖**：E3。
+* **验收**：签署记录可回查、PDF 可下载。
+
+**E5. 贷款详情聚合 API（BFF）**
+
+* **内容**：给 App 详情页提供单一接口聚合（额度/费用/合同/进度）。
+* **接口**：`GET /bff/loan/:id`
+* **依赖**：E2~E4、G1。
+* **验收**：单接口完成页面渲染，P95 ≤ 300ms。
+
+---
+
+### Epic F｜资金与支付
+
+**F1. 放款网关（沙箱）**
+
+* **内容**：抽象通道接口 `disburse()`，支持多通道策略/重试/幂等；状态 `DISBURSE_PENDING/FAILED/SUCCESS`。
+* **接口**：`POST /payment/disburse {loanId, amount, account}`
+* **事件**：`DISBURSED | DISBURSE_FAILED`
+* **依赖**：E4、A4。
+* **验收**：模拟 3 种回执（成功/失败/超时），重试策略生效。
+
+**F2. 还款网关（沙箱）**
+
+* **内容**：支付链接/聚合收银台、部分/全额还款、回调幂等。
+* **接口**：`POST /payment/pay {loanId, amount, channel}`、`POST /payment/callback`
+* **事件**：`REPAYMENT_POSTED`
+* **依赖**：G1（账单计算）、A4。
+* **验收**：生成收据，重复回调不重复入账。
+
+**F3. 对账文件解析（基础版）**
+
+* **内容**：导入 CSV，对账差异表；日终报告。
+* **接口**：`POST /admin/finance/recon/import`
+* **依赖**：F1/F2、H1（报表）。
+* **验收**：导入样例对账单，差异列表可导出。
+
+---
+
+### Epic G｜账务与账单
+
+**G1. 台账与科目设计（ledger-svc）**
+
+* **内容**：双分录：应收/收入/现金/手续费/税费；统一 `postEntry()`。
+* **接口**：`POST /ledger/entries`、`GET /ledger/balance?account=`
+* **事件**：消费 `DISBURSED/REPAYMENT_POSTED/EXTENDED`
+* **依赖**：A4、F1/F2。
+* **验收**：样例交易账平（借贷平衡），支持查询余额。
+
+**G2. 账单生成与计费（loan-svc 或 ledger-svc 子模块）**
+
+* **内容**：应还金额计算、到期日、逾期费、展期费；支持部分还款。
+* **接口**：`GET /loan/:id/bill`、`POST /loan/:id/extend`
+* **依赖**：E2、F2、G1。
+* **验收**：与费率模板一致；多次部分还款计算正确。
+
+---
+
+### Epic H｜通知与模板
+
+**H1. 通知中心（notify-svc）**
+
+* **内容**：短信/邮件/Push/WhatsApp 统一模板，变量渲染；事件驱动。
+* **接口**：`POST /notify/send`、`/admin/notify/templates`
+* **依赖**：A4（消费 `LOAN_APPROVED/DUE_TODAY/...`）。
+* **验收**：模板 A/B，发送日志可查。
+
+---
+
+### Epic I｜催收域
+
+**I1. 建案与分案**
+
+* **内容**：监听 `DUE_TODAY/OVERDUE_*` 构建 `collection_case`；自动/手动分配。
+* **接口**：`POST /admin/collection/assign`、`GET /admin/collection/cases`
+* **依赖**：E2、G2、A4。
+* **验收**：到期日 T 日自动入 D0，规则分配到坐席。
+
+**I2. 催收工作台与记录**
+
+* **内容**：单页显示用户/账单/联系方式，外呼/短信/WhatsApp 快捷；记录动作与 PTP。
+* **接口**：`POST /collection/action`、`POST /collection/ptp`
+* **依赖**：I1、H1。
+* **验收**：PTP 到期未还自动变更 `BROKEN_PTP`。
+
+**I3. 外呼号码池与通话记录导入**
+
+* **内容**：号码池管理、与第三方呼叫系统对接（先导入 CDR）。
+* **接口**：`POST /admin/voice/cdr/import`、`/admin/voice/numbers`
+* **依赖**：I2。
+* **验收**：能在案件里回看通话记录。
+
+**I4. 催收绩效**
+
+* **内容**：坐席维度接通率、回款率、PTP 达成率。
+* **接口**：`GET /admin/collection/performance?date_range=`
+* **依赖**：I2、F2。
+* **验收**：导出报表与后台对齐。
+
+---
+
+### Epic J｜渠道与运营
+
+**J1. 渠道链接与落地页参数**
+
+* **内容**：生成带参链接，归因参数保存；对接 Kochava（先 Mock）。
+* **接口**：`POST /admin/channel/link`、`GET /channel/resolve`
+* **依赖**：B1。
+* **验收**：安装后能回看到渠道来源。
+
+**J2. App 包/版本与升级**
+
+* **内容**：多包名、版本灰度/强更；Admin 配置。
+* **接口**：`GET /app/version/check?bundleId=`、`POST /admin/app/release`
+* **依赖**：A2。
+* **验收**：旧版本触发升级弹窗，灰度比例有效。
+
+**J3. 配置中心（运营配置）**
+
+* **内容**：节假日/时区/币种/税率/敏感词；统一配置服务。
+* **接口**：`GET /config/*`、`POST /admin/config/*`
+* **依赖**：全局。
+* **验收**：修改税率/币种即时生效。
+
+---
+
+### Epic K｜报表与数据
+
+**K1. 平台每日统计 v1（OLTP 直算）**
+
+* **内容**：以 SQL 物化视图/定时任务计算：装机/注册/登录/申请/放款/还款/展期/到期应还/已还/未还/首逾率。
+* **接口**：`GET /admin/report/daily?date_range=&filters`
+* **依赖**：B1/B2/E2/F1/F2/G2。
+* **验收**：指标与样例数据核对正确。
+
+**K2. 逾期迁移率与复借率**
+
+* **内容**：分桶迁移矩阵（D0→D1→…），复借定义与统计。
+* **接口**：`GET /admin/report/overdue_migration`、`/relend_rate`
+* **依赖**：G2、I1。
+* **验收**：与业务明细抽样一致。
+
+**K3. 渠道/Kochava 漏斗**
+
+* **内容**：点击/安装/注册/申请/放款漏斗；CPA/CPL/CPD。
+* **接口**：`GET /admin/report/channel`
+* **依赖**：J1、B1、E2、F1。
+* **验收**：按渠道/广告组/包名可筛选导出。
+
+**K4. OLAP 升级（ClickHouse/Kafka）**
+
+* **内容**：事件落地 ClickHouse，改造 K1~K3 查询到 OLAP。
+* **接口**：与 K1~K3 一致。
+* **依赖**：A4、各事件发布。
+* **验收**：百万级行查询 < 2s。
+
+---
+
+### Epic L｜前端（App）
+
+**L1. App 基础壳与主题/多语言**
+
+* **内容**：路由、状态管理（Bloc/Provider）、i18n、接口封装。
+* **依赖**：A2。
+* **验收**：英文/中文切换，登录页可见。
+
+**L2. 注册登录与设备上报**
+
+* **接口**：B1/B2。
+* **验收**：完成登录→首页。
+
+**L3. 资料与 KYC 流程**
+
+* **接口**：B3/B4。
+* **验收**：KYC 状态可回显、失败重试。
+
+**L4. 授信报价与申请**
+
+* **接口**：E1/E2/C1。
+* **验收**：展示费用拆分与 APR 披露，提交申请成功。
+
+**L5. 合同签署与放款进度**
+
+* **接口**：E4/F1。
+* **验收**：签署 PDF 下载，放款成功状态刷新。
+
+**L6. 账单/还款/展期**
+
+* **接口**：G2/F2。
+* **验收**：部分还款多次校验成功，收据展示。
+
+**L7. 消息中心/客服/复借入口**
+
+* **接口**：H1/E1。
+* **验收**：Push/站内信一致、复借流程打通。
+
+---
+
+### Epic M｜前端（Admin）
+
+**M1. 登录与菜单/权限（RBAC）**
+
+* **接口**：auth-svc、bff-admin。
+* **验收**：不同角色展示不同菜单。
+
+**M2. 首页看板/数据大盘**
+
+* **接口**：K1/K2。
+* **验收**：与截图风格一致，指标正确。
+
+**M3. 全部申请列表与筛选/导出**
+
+* **接口**：E2/E3，导出任务化。
+* **验收**：字段齐全（截图同名）、性能 < 1s（分页）。
+
+**M4. 申请详情（四 Tab）**
+
+* **接口**：B5、C3、E3/E4、文件下载。
+* **验收**：OCR 编辑后回写成功。
+
+**M5. 财务（放/还款/对账）**
+
+* **接口**：F1/F2/F3/G1。
+* **验收**：失败重试、对账差异清单可导出。
+
+**M6. 催收九模块**
+
+* **接口**：I1~I4/H1。
+* **验收**：分案/工作台/外呼/绩效联动。
+
+**M7. 运营管理（产品/等级/消息/渠道/升级/包管理）**
+
+* **接口**：E1、C2、H1、J1、J2、J3。
+* **验收**：修改配置即时生效。
+
+**M8. 系统报表合集**
+
+* **接口**：K1~K4。
+* **验收**：平台每日统计、逾期迁移率、渠道、复贷率四张主报上线。
+
+---
+
+### Epic P（可选二期）｜P2P 资金方
+
+**P1. 资金方账户与余额**（p2p-svc + ledger-svc）
+
+* **接口**：`/p2p/lenders`；事件：`FUNDS_DEPOSITED/WITHDRAWN`
+* **依赖**：G1。
+* **验收**：充值/提现台账平衡。
+
+**P2. 撮合引擎与出借池**
+
+* **接口**：`POST /p2p/match {loanId}` → 分摊表
+* **依赖**：E4/F1。
+* **验收**：多资金方按比例撮合，收益归集。
+
+**P3. 出借人报表与信息披露**
+
+* **接口**：`/admin/p2p/reports`
+* **依赖**：P1/P2/K4。
+* **验收**：持仓/收益/逾期暴露展示。
+
+---
+
+## 5) 关键接口与事件样例（用于任务衔接）
+
+**loan-svc → risk-svc：机审**
+
+```json
+POST /risk/evaluate
+{
+  "userId": "u_123",
+  "loan": {"amount": 500, "termDays": 7, "productId": "P_BASIC"},
+  "signals": {"device": "...", "kyc": {"ocrPassed": true, "livenessScore": 0.93}}
+}
+→
+{ "decision": "APPROVE", "score": 712, "reasons": [] }
+```
+
+**loan-svc → payment-svc：放款**
+
+```json
+POST /payment/disburse
+{ "loanId": "L20250101001", "amount": 500, "account": {"type":"wallet","no":"233..."} }
+→ { "status": "DISBURSE_PENDING", "reqNo": "D123" }
+```
+
+**payment-svc → 事件**
+
+```json
+topic: disbursement.events
+{ "event":"DISBURSED", "loanId":"L20250101001", "amount":500, "channel":"XPay", "ts": "...", "reqNo":"D123" }
+```
+
+**ledger-svc 消费事件入账**
+
+```json
+POST /ledger/entries
+{ "ref":"L20250101001", "lines":[
+  {"account":"cash","debit":0,"credit":500},
+  {"account":"loan_principal","debit":500,"credit":0}
+]}
+```
+
+**notify-svc：模板发送**
+
+```json
+POST /notify/send
+{ "channel":"sms", "template":"loan_approved", "to":"+233...", 
+  "vars":{"name":"Nancy","amount":"550","dueDate":"2025-10-28"} }
+```
+
+---
+
+## 6) 任务串接视图（从 0 到 1 的最短闭环）
+
+1. A1/A2/A4 →
+2. B1/B2（登录+设备） →
+3. B4（KYC） →
+4. C1（规则） →
+5. E1/E2/E3/E4（产品+申请+审批+合同） →
+6. F1（放款） + G1（入账） →
+7. G2（账单） + F2（还款） →
+8. I1/I2（催收） →
+9. K1（平台每日统计）
+
+> 每一步都可单独验收，但串起来即可真实放款（沙箱）与回款。
+
+---
+
+## 7) 质量与安全“内建”要求（各任务默认执行）
+
+* 幂等键、请求/响应日志脱敏、PII 加密（KMS）、RBAC 与最小权限
+* OpenAPI（Swagger）文档与 Postman 集合随代码生成
+* 单元测试覆盖率 ≥ 70%，关键路径集成测试（放/还款、回调、账平）
+* SLO/告警：放款失败率、回调超时、账不平、渠道 0 转化
+* 数据口径校验：报表与明细抽样一致
+
+---
+
+## 8) 资源配置与并行化建议
+
+* **团队分工**
+
+  * 后端甲：loan-svc + payment-svc
+  * 后端乙：user/auth + risk-svc
+  * 后端丙：ledger-svc + notify-svc + report-svc
+  * 前端甲：Flutter（L1~L6）
+  * 前端乙：Admin（M 系列）
+  * 测试/数据：口径校验与自动化用例
+* **并行化**：A* 与 B*、C* 可并行；E* 需在 C1 后接入；F*/G* 并行开发，接口用契约先行；H*/I*/K*/J* 可在主闭环完成后推进。
+
+---
+
+## 9) 交付物清单（每个任务的“完工定义”DoD）
+
+* 代码 + 单元/集成测试 + Swagger 文档 + 运行手册（README）
+* API 示例与模拟数据（curl/JSON）
+* 数据表迁移（DDL）与回滚脚本
+* 事件清单与订阅关系
+* 权限点（菜单/按钮/数据范围）列表
+* 回归用例更新（关键路径）
+
+---
+
+以上计划围绕 PRD 的业务闭环，给出了**可落地的软件架构**与**能够直接下发执行的任务拆解**。你可以把某个 Epic 下的任务逐条交给大模型/工程师完成；每个任务都已标注**接口/依赖/验收**，既能**深入局部**（一次只做 1—2 个接口/模块），也能**统筹全局**（通过事件与 BFF 聚合衔接）。若需要，我可以把这些任务导出为 **Jira CSV / Notion 模板** 或生成 **OpenAPI/DDL 文件**，方便直接导入工具链。

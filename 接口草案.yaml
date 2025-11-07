@@ -1,0 +1,1052 @@
+openapi: 3.0.3
+info:
+  title: P2P Lending Platform API
+  description: |
+    P2P现金贷平台API接口文档
+    - 借款端（App）
+    - 管理后台（Admin）
+    - 内部服务间调用
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: api@example.com
+
+servers:
+  - url: https://api.example.com/api
+    description: Production
+  - url: https://api-staging.example.com/api
+    description: Staging
+  - url: http://localhost:3000/api
+    description: Local Development
+
+tags:
+  - name: Auth
+    description: 认证授权
+  - name: User
+    description: 用户管理
+  - name: KYC
+    description: 身份认证
+  - name: Risk
+    description: 风控
+  - name: Loan
+    description: 贷款
+  - name: Payment
+    description: 支付
+  - name: Ledger
+    description: 账务
+  - name: Collection
+    description: 催收
+  - name: Notify
+    description: 通知
+  - name: Channel
+    description: 渠道
+  - name: Report
+    description: 报表
+  - name: Admin
+    description: 管理后台
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # 通用响应
+    SuccessResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "00000"
+        message:
+          type: string
+          example: "Success"
+        data:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: "错误码，格式：[模块][HTTP状态码][序号]"
+          example: "A40001"
+        message:
+          type: string
+          example: "OTP发送次数超限"
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+        timestamp:
+          type: string
+          format: date-time
+        traceId:
+          type: string
+          example: "1a2b3c4d-5e6f-7g8h-9i0j-1k2l3m4n5o6p"
+
+    PaginationRequest:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+        sortBy:
+          type: string
+          example: "createdAt"
+        sortOrder:
+          type: string
+          enum: [asc, desc]
+          default: desc
+
+    PaginationResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        totalPages:
+          type: integer
+        items:
+          type: array
+          items:
+            type: object
+
+    # 用户相关
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        phone:
+          type: string
+          example: "+233551234567"
+        countryCode:
+          type: string
+          example: "GH"
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        gender:
+          type: string
+          enum: [MALE, FEMALE, OTHER]
+        birthday:
+          type: string
+          format: date
+        level:
+          type: string
+          enum: [LEVEL1, LEVEL2, LEVEL3, LEVEL4, LEVEL5]
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, BLOCKED]
+        kycStatus:
+          type: string
+          enum: [PENDING, VERIFIED, REJECTED, MANUAL_REVIEW]
+        createdAt:
+          type: string
+          format: date-time
+
+    # KYC相关
+    KYCInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        idType:
+          type: string
+          enum: [NATIONAL_ID, PASSPORT, DRIVERS_LICENSE]
+        idNumber:
+          type: string
+        idName:
+          type: string
+        ocrImages:
+          type: array
+          items:
+            type: string
+            format: uri
+        livenessScore:
+          type: number
+          format: float
+        verified:
+          type: boolean
+        verifiedAt:
+          type: string
+          format: date-time
+
+    # 贷款相关
+    Loan:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        loanNo:
+          type: string
+          example: "L20250107001"
+        userId:
+          type: string
+          format: uuid
+        productId:
+          type: string
+        productName:
+          type: string
+        principal:
+          type: string
+          pattern: '^\d+\.\d{2}$'
+          example: "1000.00"
+        disbursedAmount:
+          type: string
+          example: "950.00"
+        feeTotal:
+          type: string
+          example: "150.00"
+        termDays:
+          type: integer
+        dueDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [DRAFT, SUBMITTED, AUTO_CHECKING, AUTO_APPROVED, AUTO_REJECTED, MANUAL_REVIEW, MANUAL_REJECTED, APPROVED, DISBURSE_PENDING, DISBURSE_FAILED, ACTIVE, DUE, OVERDUE_D0, OVERDUE_D1, OVERDUE_D3, OVERDUE_D7, OVERDUE_D15, OVERDUE_D30, PARTIAL_PAID, REPAID, EXTENDED, WRITE_OFF, CLOSED]
+        isRenewal:
+          type: boolean
+        channel:
+          type: string
+          example: "Facebook Ads"
+        appBundleId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    # 支付相关
+    Disbursement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        loanId:
+          type: string
+          format: uuid
+        channel:
+          type: string
+        amount:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, PROCESSING, SUCCESS, FAILED]
+        failReason:
+          type: string
+        attempt:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    Repayment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        loanId:
+          type: string
+          format: uuid
+        channel:
+          type: string
+        amount:
+          type: string
+        isPartial:
+          type: boolean
+        status:
+          type: string
+          enum: [PENDING, SUCCESS, FAILED]
+        paidAt:
+          type: string
+          format: date-time
+
+    # 催收相关
+    CollectionCase:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        loanId:
+          type: string
+          format: uuid
+        bucket:
+          type: string
+          enum: [D0, D1, D3, D7, D15, D30, D60, D90]
+        assignedTo:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [OPEN, IN_PROGRESS, PTP, BROKEN_PTP, PAID, TRANSFERRED, WRITE_OFF]
+        ptpTime:
+          type: string
+          format: date-time
+        ptpAmount:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+  parameters:
+    IdempotencyKey:
+      name: X-Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: 幂等键，用于防止重复请求
+
+    TraceId:
+      name: X-Trace-Id
+      in: header
+      required: false
+      schema:
+        type: string
+      description: 链路追踪ID
+
+    Currency:
+      name: X-Currency
+      in: header
+      required: false
+      schema:
+        type: string
+        enum: [GHS, NGN, USD]
+        default: GHS
+      description: 币种
+
+    Language:
+      name: Accept-Language
+      in: header
+      required: false
+      schema:
+        type: string
+        enum: [en, zh]
+        default: en
+      description: 语言
+
+  responses:
+    BadRequest:
+      description: 请求参数错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "40000"
+            message: "请求参数错误"
+            details:
+              - field: "phone"
+                message: "手机号格式不正确"
+            timestamp: "2025-01-07T10:00:00Z"
+            traceId: "1a2b3c4d"
+
+    Unauthorized:
+      description: 未授权
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "A40101"
+            message: "Token已过期"
+            timestamp: "2025-01-07T10:00:00Z"
+
+    Forbidden:
+      description: 无权限
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "A40301"
+            message: "无权限访问该资源"
+
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "40401"
+            message: "资源不存在"
+
+    TooManyRequests:
+      description: 请求频率超限
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "42901"
+            message: "请求频率超限，请稍后重试"
+            timestamp: "2025-01-07T10:00:00Z"
+
+    InternalServerError:
+      description: 服务器内部错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "50001"
+            message: "服务器内部错误"
+            timestamp: "2025-01-07T10:00:00Z"
+            traceId: "1a2b3c4d"
+
+paths:
+  # ==================== 认证 ====================
+  /auth/send-otp:
+    post:
+      tags: [Auth]
+      summary: 发送OTP
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone:
+                  type: string
+                  example: "+233551234567"
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          requestId:
+                            type: string
+                          expiresIn:
+                            type: integer
+                            example: 300
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: 登录
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, otp]
+              properties:
+                phone:
+                  type: string
+                otp:
+                  type: string
+                deviceInfo:
+                  type: object
+                  properties:
+                    deviceId:
+                      type: string
+                    brand:
+                      type: string
+                    model:
+                      type: string
+                    os:
+                      type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          accessToken:
+                            type: string
+                          refreshToken:
+                            type: string
+                          expiresIn:
+                            type: integer
+                          user:
+                            $ref: '#/components/schemas/User'
+
+  # ==================== 用户 ====================
+  /user/profile:
+    get:
+      tags: [User]
+      summary: 获取用户信息
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+
+    put:
+      tags: [User]
+      summary: 更新用户信息
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                address:
+                  type: string
+      responses:
+        '200':
+          description: 成功
+
+  /user/devices:
+    post:
+      tags: [User]
+      summary: 上报设备信息
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                deviceId:
+                  type: string
+                brand:
+                  type: string
+                model:
+                  type: string
+                os:
+                  type: string
+                isEmulator:
+                  type: boolean
+      responses:
+        '200':
+          description: 成功
+
+  # ==================== KYC ====================
+  /kyc/ocr:
+    post:
+      tags: [KYC]
+      summary: 上传证件OCR
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                idType:
+                  type: string
+                  enum: [NATIONAL_ID, PASSPORT, DRIVERS_LICENSE]
+                frontImage:
+                  type: string
+                  format: binary
+                backImage:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          idNumber:
+                            type: string
+                          name:
+                            type: string
+                          birthday:
+                            type: string
+
+  /kyc/liveness:
+    post:
+      tags: [KYC]
+      summary: 上传活体检测视频
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                video:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          passed:
+                            type: boolean
+                          score:
+                            type: number
+
+  # ==================== 贷款 ====================
+  /loan/products:
+    get:
+      tags: [Loan]
+      summary: 获取贷款产品列表
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            name:
+                              type: string
+                            amountRange:
+                              type: object
+                              properties:
+                                min:
+                                  type: string
+                                max:
+                                  type: string
+                            termOptions:
+                              type: array
+                              items:
+                                type: integer
+                            feePlan:
+                              type: object
+
+  /loan/apply:
+    post:
+      tags: [Loan]
+      summary: 申请贷款
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productId, amount, termDays, accountId]
+              properties:
+                productId:
+                  type: string
+                amount:
+                  type: string
+                termDays:
+                  type: integer
+                accountId:
+                  type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          loanId:
+                            type: string
+                          status:
+                            type: string
+
+  /loan/{loanId}:
+    get:
+      tags: [Loan]
+      summary: 获取贷款详情
+      parameters:
+        - name: loanId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Loan'
+
+  /loan/{loanId}/sign:
+    post:
+      tags: [Loan]
+      summary: 签署合同
+      parameters:
+        - name: loanId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                signature:
+                  type: string
+                otp:
+                  type: string
+      responses:
+        '200':
+          description: 成功
+
+  # ==================== 支付 ====================
+  /payment/disburse:
+    post:
+      tags: [Payment]
+      summary: 放款（内部接口）
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [loanId, amount, account]
+              properties:
+                loanId:
+                  type: string
+                amount:
+                  type: string
+                account:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum: [BANK, WALLET, CARD]
+                    accountNo:
+                      type: string
+                    holderName:
+                      type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          disbursementId:
+                            type: string
+                          status:
+                            type: string
+
+  /payment/callback:
+    post:
+      tags: [Payment]
+      summary: 支付通道回调
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                channelOrderNo:
+                  type: string
+                platformOrderNo:
+                  type: string
+                status:
+                  type: string
+                signature:
+                  type: string
+      responses:
+        '200':
+          description: 成功
+
+  # ==================== 管理后台 ====================
+  /admin/loan/list:
+    get:
+      tags: [Admin]
+      summary: 获取申请列表
+      parameters:
+        - name: phone
+          in: query
+          schema:
+            type: string
+        - name: loanNo
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PaginationResponse'
+
+  /admin/loan/{loanId}/manual-review:
+    post:
+      tags: [Admin]
+      summary: 人工审批
+      parameters:
+        - name: loanId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [result, reasonCode]
+              properties:
+                result:
+                  type: string
+                  enum: [PASS, REJECT]
+                reasonCode:
+                  type: string
+                remark:
+                  type: string
+      responses:
+        '200':
+          description: 成功
+
+  /admin/report/daily:
+    get:
+      tags: [Report]
+      summary: 平台每日统计
+      parameters:
+        - name: startDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: channel
+          in: query
+          schema:
+            type: string
+        - name: appBundleId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            date:
+                              type: string
+                              format: date
+                            registrations:
+                              type: integer
+                            logins:
+                              type: integer
+                            applications:
+                              type: integer
+                            disbursements:
+                              type: integer
+                            disbursementAmount:
+                              type: string
+                            repayments:
+                              type: integer
+                            repaymentAmount:
+                              type: string
+                            dueCount:
+                              type: integer
+                            repaidCount:
+                              type: integer
+                            overdueCount:
+                              type: integer
+                            fpd:
+                              type: number
+                              description: "首逾率 (First Payment Default)"
+
+# ==================== 错误码清单 ====================
+# 认证模块 (A)
+# A40001: OTP_LIMIT_EXCEEDED - OTP发送次数超限
+# A40002: INVALID_OTP - OTP错误
+# A40003: OTP_EXPIRED - OTP已过期
+# A40101: TOKEN_EXPIRED - Token已过期
+# A40102: TOKEN_INVALID - Token无效
+# A40301: PERMISSION_DENIED - 无权限
+
+# 用户模块 (U)
+# U40401: USER_NOT_FOUND - 用户不存在
+# U40901: USER_BLOCKED - 用户已被冻结
+# U42201: INVALID_PHONE - 手机号格式不正确
+
+# 风控模块 (R)
+# R42201: BLACKLIST_HIT - 命中黑名单
+# R42202: RISK_RULE_REJECT - 风控规则拒绝
+# R42203: DUPLICATE_DEVICE - 设备重复
+
+# 贷款模块 (L)
+# L40401: LOAN_NOT_FOUND - 贷款不存在
+# L42201: INVALID_LOAN_AMOUNT - 贷款金额不合法
+# L42202: LOAN_ALREADY_EXISTS - 贷款已存在
+# L42203: LOAN_STATUS_NOT_ALLOW - 贷款状态不允许该操作
+
+# 支付模块 (P)
+# P50001: CHANNEL_TIMEOUT - 通道超时
+# P50002: CHANNEL_ERROR - 通道错误
+# P40901: DUPLICATE_CALLBACK - 重复回调
+# P42201: INVALID_SIGNATURE - 签名验证失败
+
+# 账务模块 (D)
+# D50001: LEDGER_IMBALANCE - 账务不平衡
+# D42201: INSUFFICIENT_BALANCE - 余额不足
+
+# 通知模块 (N)
+# N50001: SMS_SEND_FAILED - 短信发送失败
+# N50002: EMAIL_SEND_FAILED - 邮件发送失败
+
+# 催收模块 (C)
+# C40401: CASE_NOT_FOUND - 案件不存在
+# C40301: CASE_NOT_ASSIGNED - 案件未分配给当前用户
+
+# 通用错误
+# 40000: BAD_REQUEST - 请求参数错误
+# 40401: NOT_FOUND - 资源不存在
+# 42901: TOO_MANY_REQUESTS - 请求频率超限
+# 50001: INTERNAL_SERVER_ERROR - 服务器内部错误
+# 50301: SERVICE_UNAVAILABLE - 服务暂时不可用
+
