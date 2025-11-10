@@ -1,0 +1,70 @@
+import { Button, Card, Form, Input, Select, Space, Table, Tag, type TableColumnsType } from 'antd';
+import { applicationsMock, type ApplicationRecord } from '../mocks/data';
+
+const Applications = () => {
+  const [form] = Form.useForm();
+
+  const columns: TableColumnsType<ApplicationRecord> = [
+    { title: '贷款编号', dataIndex: 'id', render: (value) => <a>{value}</a> },
+    { title: '产品名称', dataIndex: 'product' },
+    { title: '用户姓名', dataIndex: 'name' },
+    { title: '申请渠道', dataIndex: 'channel' },
+    { title: '用户等级', dataIndex: 'level' },
+    { title: '金额', dataIndex: 'amount' },
+    { title: '期限', dataIndex: 'term' },
+    { title: '审核员', dataIndex: 'reviewer' },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      render: (status: ApplicationRecord['status']) => (
+        <Tag color={status === '通过' ? 'green' : 'red'}>{status}</Tag>
+      )
+    }
+  ];
+
+  return (
+    <Space direction="vertical" size={24} style={{ width: '100%' }}>
+      <Card>
+        <Form
+          layout="vertical"
+          form={form}
+          className="form-grid"
+        >
+          <Form.Item label="手机号" name="phone">
+            <Input placeholder="请输入" allowClear />
+          </Form.Item>
+          <Form.Item label="申请时间" name="time">
+            <Input placeholder="2025-07-19 ~ 2025-10-20" />
+          </Form.Item>
+          <Form.Item label="贷款类型" name="product">
+            <Select options={[{ value: 'all', label: '全部' }, { value: 'max', label: 'InsCash Max' }]} />
+          </Form.Item>
+          <Form.Item label="用户等级" name="level">
+            <Select options={[{ value: 'all', label: '全部' }, { value: 'level5', label: 'Level5' }]} />
+          </Form.Item>
+          <Form.Item label="申请渠道" name="channel">
+            <Select options={[{ value: 'all', label: '全部' }, { value: 'facebook', label: 'Facebook Ads' }, { value: 'google', label: 'Google Ads' }]} />
+          </Form.Item>
+          <Form.Item label="App 版本" name="app">
+            <Select options={[{ value: 'all', label: '全部' }, { value: '1.0.17', label: '1.0.17' }]} />
+          </Form.Item>
+        </Form>
+        <Space style={{ marginTop: 12 }}>
+          <Button type="primary">查询</Button>
+          <Button htmlType="reset">重置</Button>
+          <Button>导出</Button>
+        </Space>
+      </Card>
+      <Card>
+        <Table<ApplicationRecord>
+          rowKey="id"
+          columns={columns}
+          dataSource={applicationsMock}
+          pagination={false}
+        />
+      </Card>
+    </Space>
+  );
+};
+
+export default Applications;
