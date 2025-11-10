@@ -17,6 +17,7 @@ export interface DailyStat {
 
 export interface ApplicationRecord {
   id: string;
+  userId: string;
   product: string;
   name: string;
   channel: string;
@@ -27,14 +28,92 @@ export interface ApplicationRecord {
   status: '通过' | '拒绝';
 }
 
+export interface ApprovalNode {
+  node: string;
+  result: string;
+  operator: string;
+  remark?: string;
+  time: string;
+}
+
+export interface ApplicationHistoryEntry {
+  ts: string;
+  event: string;
+  actor: string;
+}
+
+export interface ApplicationDetail {
+  application: ApplicationRecord;
+  basic: {
+    applyTime: string;
+    productVersion: string;
+    deviceBrand: string;
+    deviceModel: string;
+    appVersion: string;
+    source: string;
+    repeated: boolean;
+  };
+  approval: ApprovalNode[];
+  history: ApplicationHistoryEntry[];
+}
+
 export interface CollectionCase {
   caseId: string;
   user: string;
   bucket: string;
   amount: number;
+  principalDue: number;
+  overdueDays: number;
+  ptpStatus: string;
   assignee: string;
+  channel: string;
   due: string;
   status: string;
+}
+
+export interface CollectionFollowUp {
+  ts: string;
+  actor: string;
+  action: string;
+  result: string;
+}
+
+export interface CollectionPTPRecord {
+  ts: string;
+  amount: number;
+  promiseDate: string;
+  status: '有效' | '失效';
+  note?: string;
+}
+
+export interface CollectionCallLog {
+  ts: string;
+  channel: string;
+  duration: string;
+  note: string;
+}
+
+export interface CollectionContactInfo {
+  phone: string;
+  altPhone?: string;
+  whatsapp?: string;
+  address: string;
+}
+
+export interface CollectionCaseDetail {
+  summary: {
+    caseId: string;
+    user: string;
+    bucket: string;
+    overdueDays: number;
+    amount: number;
+    ptpStatus: string;
+    device: string;
+  };
+  contact: CollectionContactInfo;
+  followUps: CollectionFollowUp[];
+  ptpRecords: CollectionPTPRecord[];
+  callLogs: CollectionCallLog[];
 }
 
 export interface CaseDetailHistory {
@@ -85,6 +164,23 @@ export interface ReleaseNote {
   highlight: string;
 }
 
+export interface UserProfile {
+  userId: string;
+  name: string;
+  gender: string;
+  phone: string;
+  email: string;
+  level: string;
+  kycStatus: string;
+  registerDate: string;
+  lastLogin: string;
+  tags: string[];
+  riskFlags: string[];
+  address: string;
+  gps: string;
+  blacklisted: boolean;
+}
+
 export const dashboardKpis: DashboardKpi[] = [
   { label: '今日放款金额', value: '₵93,800', delta: '+12.6% vs 昨日' },
   { label: '今日申请笔数', value: '27', delta: '首逾率 38.19%' },
@@ -101,16 +197,132 @@ export const dailyStatsMock: DailyStat[] = [
 ];
 
 export const applicationsMock: ApplicationRecord[] = [
-  { id: '397709', product: 'InsCash Plus', name: 'Chiamaka Eddy-okafor', channel: 'Google Ads', level: 'Level5', amount: 150, term: '7D', reviewer: 'OCR 编辑', status: '通过' },
-  { id: '397708', product: 'InsCash Max', name: 'Nancy A. Osei', channel: 'Facebook Ads', level: 'Level5', amount: 550, term: '7D', reviewer: 'OCR 编辑', status: '通过' },
-  { id: '397706', product: 'InsCash Pro', name: 'Samuel Adu', channel: 'Facebook Ads', level: 'Level1', amount: 5000, term: '180D', reviewer: 'OCR 编辑', status: '拒绝' }
+  { id: '397709', userId: 'U10001', product: 'InsCash Plus', name: 'Chiamaka Eddy-okafor', channel: 'Google Ads', level: 'Level5', amount: 150, term: '7D', reviewer: 'OCR 编辑', status: '通过' },
+  { id: '397708', userId: 'U10002', product: 'InsCash Max', name: 'Nancy A. Osei', channel: 'Facebook Ads', level: 'Level5', amount: 550, term: '7D', reviewer: 'OCR 编辑', status: '通过' },
+  { id: '397706', userId: 'U10003', product: 'InsCash Pro', name: 'Samuel Adu', channel: 'Facebook Ads', level: 'Level1', amount: 5000, term: '180D', reviewer: 'OCR 编辑', status: '拒绝' }
 ];
 
 export const collectionCasesMock: CollectionCase[] = [
-  { caseId: 'CASE-1001', user: 'Nancy Osei', bucket: 'D1', amount: 520, assignee: 'Team A', due: '2025-10-21', status: '工作中' },
-  { caseId: 'CASE-1002', user: 'Samuel Adu', bucket: 'D7', amount: 1450, assignee: 'Team A', due: '2025-10-14', status: 'PTP 10/22' },
-  { caseId: 'CASE-1003', user: 'Kobby Gomez', bucket: 'D15', amount: 2880, assignee: 'Team B', due: '2025-10-05', status: '转外包' }
+  {
+    caseId: 'CASE-1001',
+    user: 'Nancy Osei',
+    bucket: 'D1',
+    amount: 520,
+    principalDue: 480,
+    overdueDays: 1,
+    ptpStatus: 'PTP 10/22',
+    assignee: 'Team A / Sitsofe',
+    channel: 'Facebook Ads',
+    due: '2025-10-21',
+    status: '工作中'
+  },
+  {
+    caseId: 'CASE-1002',
+    user: 'Samuel Adu',
+    bucket: 'D7',
+    amount: 1450,
+    principalDue: 1300,
+    overdueDays: 7,
+    ptpStatus: '未承诺',
+    assignee: 'Team A / Sitsofe',
+    channel: 'Facebook Ads',
+    due: '2025-10-14',
+    status: 'PTP 10/22'
+  },
+  {
+    caseId: 'CASE-1003',
+    user: 'Kobby Gomez',
+    bucket: 'D15',
+    amount: 2880,
+    principalDue: 2500,
+    overdueDays: 15,
+    ptpStatus: '转外包',
+    assignee: 'Team B / Dora',
+    channel: 'Google Ads',
+    due: '2025-10-05',
+    status: '转外包'
+  }
 ];
+
+export const collectionDetailsMock: Record<string, CollectionCaseDetail> = {
+  'CASE-1001': {
+    summary: {
+      caseId: 'CASE-1001',
+      user: 'Nancy Osei',
+      bucket: 'D1',
+      overdueDays: 1,
+      amount: 520,
+      ptpStatus: 'PTP 10/22',
+      device: 'Android · Itel P671L'
+    },
+    contact: {
+      phone: '+233-553-000-175',
+      whatsapp: '+233-553-000-175',
+      address: 'Ashanti Bantama BA 52'
+    },
+    followUps: [
+      { ts: '2025-10-20 11:31', actor: 'Sitsofe', action: '外呼', result: '客户承诺 10/22 全额' },
+      { ts: '2025-10-20 09:15', actor: '系统', action: '短信', result: '发送催收短信模板 L1' }
+    ],
+    ptpRecords: [
+      { ts: '2025-10-20 11:31', amount: 520, promiseDate: '2025-10-22', status: '有效', note: '客户表示薪水到账即还' }
+    ],
+    callLogs: [
+      { ts: '2025-10-20 11:31', channel: '外呼', duration: '03:15', note: '语气平稳，确认 10/22 还款' },
+      { ts: '2025-10-20 10:02', channel: '外呼', duration: '00:35', note: '无人接听' }
+    ]
+  },
+  'CASE-1002': {
+    summary: {
+      caseId: 'CASE-1002',
+      user: 'Samuel Adu',
+      bucket: 'D7',
+      overdueDays: 7,
+      amount: 1450,
+      ptpStatus: '未承诺',
+      device: 'Android · Samsung A21'
+    },
+    contact: {
+      phone: '+233-553-888-002',
+      altPhone: '+233-550-888-200',
+      address: 'Kumasi, Ghana'
+    },
+    followUps: [
+      { ts: '2025-10-20 16:45', actor: 'Sitsofe', action: '外呼', result: '拒接' },
+      { ts: '2025-10-19 10:20', actor: '系统', action: '短信', result: '发送 D7 模板' }
+    ],
+    ptpRecords: [],
+    callLogs: [
+      { ts: '2025-10-20 16:45', channel: '外呼', duration: '00:05', note: '拒接' },
+      { ts: '2025-10-18 15:10', channel: 'WhatsApp', duration: '文本', note: '提醒付款' }
+    ]
+  },
+  'CASE-1003': {
+    summary: {
+      caseId: 'CASE-1003',
+      user: 'Kobby Gomez',
+      bucket: 'D15',
+      overdueDays: 15,
+      amount: 2880,
+      ptpStatus: '转外包',
+      device: 'Android · Tecno Spark'
+    },
+    contact: {
+      phone: '+233-551-123-444',
+      address: 'Accra, Ghana'
+    },
+    followUps: [
+      { ts: '2025-10-18 08:05', actor: 'Dora', action: '外呼', result: '无人接听' },
+      { ts: '2025-10-17 12:00', actor: '系统', action: '推送', result: '通知已送达' }
+    ],
+    ptpRecords: [
+      { ts: '2025-10-10 09:00', amount: 1000, promiseDate: '2025-10-12', status: '失效', note: '未按时付款' }
+    ],
+    callLogs: [
+      { ts: '2025-10-18 08:05', channel: '外呼', duration: '00:10', note: '无人接听' }
+    ]
+  }
+};
 
 export const caseDetailMock: CaseDetail = {
   customer: {
@@ -157,3 +369,81 @@ export const releasesMock: ReleaseNote[] = [
   { version: 'v1.0.16', date: '2025-09-30', highlight: '优化注册链路，接入 Kochava。' },
   { version: 'v1.0.15', date: '2025-09-10', highlight: '上线新催收模板与语音策略。' }
 ];
+
+export const applicationDetailsMock: Record<string, ApplicationDetail> = Object.fromEntries(
+  applicationsMock.map((application) => [
+    application.id,
+    {
+      application,
+      basic: {
+        applyTime: '2025-10-20 08:06:08',
+        productVersion: '2025Q4',
+        deviceBrand: 'Itel',
+        deviceModel: 'itel P671L',
+        appVersion: '1.0.17',
+        source: application.channel,
+        repeated: application.id === '397708'
+      },
+      approval: [
+        { node: '机审', result: application.status === '通过' ? '通过' : '拒绝', operator: '规则引擎', time: '2025-10-20 08:06:30' },
+        { node: '人工复核', result: application.status, operator: '审批员 A', remark: 'OCR 编辑', time: '2025-10-20 08:08:10' }
+      ],
+      history: [
+        { ts: '2025-10-19 21:10', event: '提交申请', actor: application.name },
+        { ts: '2025-10-20 08:06', event: '机审完成', actor: '风控系统' },
+        { ts: '2025-10-20 08:08', event: '人工审批', actor: '审批员 A' }
+      ]
+    }
+  ])
+);
+
+export const userProfilesMock: Record<string, UserProfile> = {
+  U10001: {
+    userId: 'U10001',
+    name: 'Chiamaka Eddy-okafor',
+    gender: '女',
+    phone: '+233-553-001-123',
+    email: 'chiamaka@example.com',
+    level: 'Level5',
+    kycStatus: '已通过',
+    registerDate: '2024-11-20',
+    lastLogin: '2025-10-20 07:55',
+    tags: ['复借', '高价值'],
+    riskFlags: ['设备可信'],
+    address: 'Accra, Ghana',
+    gps: '5.6037, -0.1870',
+    blacklisted: false
+  },
+  U10002: {
+    userId: 'U10002',
+    name: 'Nancy Agyapomaa Osei',
+    gender: '女',
+    phone: '+233-553-000-175',
+    email: 'nancy.osei@example.com',
+    level: 'Level5',
+    kycStatus: '已通过',
+    registerDate: '2024-09-10',
+    lastLogin: '2025-10-20 08:03',
+    tags: ['社交渠道'],
+    riskFlags: ['通讯录稀疏'],
+    address: 'Ashanti Bantama BA 52',
+    gps: '6.6021, -1.6246',
+    blacklisted: false
+  },
+  U10003: {
+    userId: 'U10003',
+    name: 'Samuel Asiedu Adu',
+    gender: '男',
+    phone: '+233-553-888-002',
+    email: 'samuel.adu@example.com',
+    level: 'Level1',
+    kycStatus: '待审核',
+    registerDate: '2025-01-05',
+    lastLogin: '2025-10-19 21:30',
+    tags: ['新客'],
+    riskFlags: ['设备更换频繁'],
+    address: 'Kumasi, Ghana',
+    gps: '6.6906, -1.6209',
+    blacklisted: false
+  }
+};

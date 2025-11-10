@@ -1,13 +1,15 @@
 import { Button, Card, Form, Input, Select, Space, Table, Tag, type TableColumnsType } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import { applicationsMock, type ApplicationRecord } from '../mocks/data';
 
 const Applications = () => {
   const [form] = Form.useForm();
+  const navigate = useNavigate();
 
   const columns: TableColumnsType<ApplicationRecord> = [
-    { title: '贷款编号', dataIndex: 'id', render: (value) => <a>{value}</a> },
+    { title: '贷款编号', dataIndex: 'id', render: (value) => <a onClick={() => navigate(`/applications/${value}`)}>{value}</a> },
     { title: '产品名称', dataIndex: 'product' },
-    { title: '用户姓名', dataIndex: 'name' },
+    { title: '用户姓名', dataIndex: 'name', render: (value, record) => <a onClick={() => navigate(`/users/${record.userId}`)}>{value}</a> },
     { title: '申请渠道', dataIndex: 'channel' },
     { title: '用户等级', dataIndex: 'level' },
     { title: '金额', dataIndex: 'amount' },
@@ -19,17 +21,27 @@ const Applications = () => {
       render: (status: ApplicationRecord['status']) => (
         <Tag color={status === '通过' ? 'green' : 'red'}>{status}</Tag>
       )
+    },
+    {
+      title: '操作',
+      dataIndex: 'action',
+      render: (_, record) => (
+        <Space>
+          <Button type="link" onClick={() => navigate(`/applications/${record.id}`)}>
+            查看详情
+          </Button>
+          <Button type="link" onClick={() => navigate(`/users/${record.userId}`)}>
+            用户档案
+          </Button>
+        </Space>
+      )
     }
   ];
 
   return (
     <Space direction="vertical" size={24} style={{ width: '100%' }}>
       <Card>
-        <Form
-          layout="vertical"
-          form={form}
-          className="form-grid"
-        >
+        <Form layout="vertical" form={form} className="form-grid">
           <Form.Item label="手机号" name="phone">
             <Input placeholder="请输入" allowClear />
           </Form.Item>
@@ -50,8 +62,10 @@ const Applications = () => {
           </Form.Item>
         </Form>
         <Space style={{ marginTop: 12 }}>
-          <Button type="primary">查询</Button>
-          <Button htmlType="reset">重置</Button>
+          <Button type="primary" onClick={() => form.validateFields()}>
+            查询
+          </Button>
+          <Button onClick={() => form.resetFields()}>重置</Button>
           <Button>导出</Button>
         </Space>
       </Card>
@@ -60,7 +74,7 @@ const Applications = () => {
           rowKey="id"
           columns={columns}
           dataSource={applicationsMock}
-          pagination={false}
+          pagination={{ pageSize: 5 }}
         />
       </Card>
     </Space>
