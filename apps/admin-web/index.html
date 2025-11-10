@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>InsCash 管理后台 - 交互稿</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">InsCash</div>
+        <nav>
+          <section>
+            <p class="section-label">核心</p>
+            <button class="nav-item active" data-view="dashboard">🏠 首页</button>
+            <button class="nav-item" data-view="dailyStats">📊 数据大盘</button>
+            <button class="nav-item" data-view="applications">📝 申请管理</button>
+          </section>
+          <section>
+            <p class="section-label">催收管理</p>
+            <button class="nav-item" data-view="collections">案件列表</button>
+            <button class="nav-item" data-view="caseDetail">案件详情</button>
+          </section>
+          <section>
+            <p class="section-label">运营管理</p>
+            <button class="nav-item" data-view="ops">日常配置</button>
+            <button class="nav-item" data-view="upgrade">App 升级</button>
+          </section>
+        </nav>
+      </aside>
+      <main class="workspace">
+        <header class="topbar">
+          <div class="breadcrumbs">首页 &gt; 面板预览</div>
+          <div class="meta">
+            <span>LT: 2025/10/20 08:13:52</span>
+            <span class="tag tag-success">在线</span>
+            <span class="avatar">OP</span>
+          </div>
+        </header>
+        <section id="content" class="content"></section>
+      </main>
+    </div>
+    <script src="main.js" type="module"></script>
+  </body>
+</html>

@@ -1,0 +1,14 @@
+### Health Check
+GET http://localhost:8000/healthz
+Content-Type: application/json
+Accept: application/json
+
+
+### Reload Declarative Config
+POST http://localhost:8000/internal/reload
+Content-Type: application/json
+Accept: application/json
+
+{
+  "traceId": "dev-script"
+}

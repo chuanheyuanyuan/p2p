@@ -1,0 +1,19 @@
+### Register Lender
+POST http://localhost:8013/p2p/lenders
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Lender Club",
+  "contact": "ops@lender.com",
+  "currency": "GHS"
+}
+
+### Match Loan
+POST http://localhost:8013/p2p/match
+Content-Type: application/json
+Accept: application/json
+
+{
+  "loanId": "loan-001"
+}

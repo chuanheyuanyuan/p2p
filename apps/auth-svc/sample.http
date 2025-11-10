@@ -1,0 +1,21 @@
+### Request OTP
+POST http://localhost:8003/auth/otp
+Content-Type: application/json
+Accept: application/json
+
+{
+  "phone": "233555000111",
+  "countryCode": "+233",
+  "channel": "sms"
+}
+
+### Exchange Token
+POST http://localhost:8003/auth/token
+Content-Type: application/json
+Accept: application/json
+
+{
+  "requestId": "otp-req-1",
+  "otpCode": "123456",
+  "deviceId": "device-abc"
+}

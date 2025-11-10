@@ -1,0 +1,23 @@
+### Create Case
+POST http://localhost:8010/collections/cases
+Content-Type: application/json
+Accept: application/json
+
+{
+  "loanId": "loan-001",
+  "userId": "user-123",
+  "bucket": "D1",
+  "principalDue": 520,
+  "currency": "GHS"
+}
+
+### Record Action
+POST http://localhost:8010/collections/cases/{{caseId}}/actions
+Content-Type: application/json
+Accept: application/json
+
+{
+  "actionType": "CALL",
+      "actor": "collector-1",
+      "note": "Promised to pay tomorrow"
+}

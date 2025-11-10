@@ -1,0 +1,25 @@
+### Evaluate Loan
+POST http://localhost:8005/risk/evaluations
+Content-Type: application/json
+Accept: application/json
+
+{
+  "userId": "user-123",
+  "loan": {
+    "loanId": "loan-001",
+    "amount": 500,
+    "termDays": 14,
+    "productId": "P_BASIC"
+  },
+  "signals": {
+    "device": {
+      "fingerprint": "abc"
+    }
+  }
+}
+
+### Get Decision
+GET http://localhost:8005/risk/decisions/{{loanId}}
+Content-Type: application/json
+Accept: application/json
+

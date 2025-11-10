@@ -1,0 +1,17 @@
+### Create Loan
+POST http://localhost:8006/loans
+Content-Type: application/json
+Accept: application/json
+
+{
+  "productId": "P_BASIC",
+  "requestedAmount": 500,
+  "termDays": 14
+}
+
+### Submit Loan
+POST http://localhost:8006/loans/{{loanId}}/submit
+Content-Type: application/json
+Accept: application/json
+
+{}

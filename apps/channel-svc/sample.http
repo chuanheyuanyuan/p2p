@@ -1,0 +1,17 @@
+### Ingest Attribution
+POST http://localhost:8011/channels/attributions
+Content-Type: application/json
+Accept: application/json
+
+{
+  "installId": "install-001",
+  "channel": "facebook",
+  "event": "install",
+  "occurredAt": "2025-01-01T10:00:00Z"
+}
+
+### Funnel
+GET http://localhost:8011/channels/funnel?date=2025-01-01
+Content-Type: application/json
+Accept: application/json
+

@@ -1,0 +1,19 @@
+### Get Profile
+GET http://localhost:8004/users/{{userId}}
+Content-Type: application/json
+Accept: application/json
+
+
+### Submit KYC
+PUT http://localhost:8004/users/{{userId}}/kyc
+Content-Type: application/json
+Accept: application/json
+
+{
+  "docType": "ID_CARD",
+  "docNo": "GHA123456",
+  "ocrResult": {
+    "name": "Nancy Doe"
+  },
+  "livenessScore": 0.96
+}

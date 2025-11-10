@@ -1,0 +1,16 @@
+### Borrower Dashboard
+GET http://localhost:8001/mobile/v1/dashboard
+Content-Type: application/json
+Accept: application/json
+
+
+### Create Loan Draft
+POST http://localhost:8001/mobile/v1/loans
+Content-Type: application/json
+Accept: application/json
+
+{
+  "productId": "P_BASIC",
+  "amount": 500,
+  "termDays": 14
+}

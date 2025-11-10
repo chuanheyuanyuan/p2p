@@ -1,0 +1,15 @@
+### List Pending Loans
+GET http://localhost:8002/admin/v1/loans?status=SUBMITTED
+Content-Type: application/json
+Accept: application/json
+
+
+### Assign Case
+POST http://localhost:8002/admin/v1/cases/assign
+Content-Type: application/json
+Accept: application/json
+
+{
+  "caseId": "CASE123",
+  "assigneeId": "collector-1"
+}

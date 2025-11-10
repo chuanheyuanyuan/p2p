@@ -1,0 +1,208 @@
+version: '3'
+
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+  PYTHONWARNINGS: default
+
+vars:
+  UV: uv
+  PYTHON: python3
+
+includes: {}
+
+tasks:
+  bootstrap:
+    desc: 安装/更新 uv 并按需安装依赖（若 pyproject 存在）。
+    cmds:
+      - "command -v {{.UV}} >/dev/null 2>&1 || pip install --user {{.UV}}"
+      - "if [ -f pyproject.toml ]; then {{.UV}} pip install --system -r requirements-dev.txt || {{.UV}} pip install --system -r requirements.txt; else echo 'pyproject.toml 未找到，跳过依赖安装'; fi"
+
+  fmt:
+    desc: 运行 ruff/black 等格式化（存在时执行）。
+    cmds:
+      - "if [ -f pyproject.toml ]; then {{.UV}} run ruff format || true; else echo '无 pyproject.toml，跳过 ruff format'; fi"
+      - "if [ -f pyproject.toml ]; then {{.UV}} run black . || true; else echo '无 pyproject.toml，跳过 black'; fi"
+
+  lint:
+    desc: 运行静态检查。
+    cmds:
+      - "if [ -f pyproject.toml ]; then {{.UV}} run ruff check . || true; else echo '无 pyproject.toml，跳过 lint'; fi"
+      - "if [ -f pyproject.toml ]; then {{.UV}} run mypy . || true; else echo '无 pyproject.toml，跳过 mypy'; fi"
+
+  test:
+    desc: 执行 pytest（若已配置）。
+    cmds:
+      - "if [ -f pyproject.toml ]; then {{.UV}} run pytest -q || true; else echo '无 pyproject.toml，跳过 pytest'; fi"
+
+  dev:compose:
+    desc: 启动 docker compose 堆栈（需先准备 docker-compose.yml）。
+    cmds:
+      - "if [ -f docker-compose.yml ]; then docker compose up api-gateway bff-mobile bff-admin user-svc auth-svc -d; else echo 'docker-compose.yml 未找到，跳过'; fi"
+
+  run:api-gateway:
+    desc: 启动 API Gateway 开发服务器（FastAPI/Kong stub）。
+    cmds:
+      - |
+        SERVICE_PATH="apps/api-gateway"
+        PORT=8000
+        if [ -f "$SERVICE_PATH/app/main.py" ]; then
+          (cd "$SERVICE_PATH" && {{.UV}} run uvicorn app.main:app --reload --port $PORT)
+        else
+          echo "⚠️  $SERVICE_PATH/app/main.py 未找到，请按 README.vibe.md 指引 scaffold 服务。"
+        fi
+
+  run:bff-mobile:
+    desc: 启动 Mobile BFF。
+    cmds:
+      - |
+        SERVICE_PATH="apps/bff-mobile"
+        PORT=8001
+        if [ -f "$SERVICE_PATH/app/main.py" ]; then
+          (cd "$SERVICE_PATH" && {{.UV}} run uvicorn app.main:app --reload --port $PORT)
+        else
+          echo "⚠️  $SERVICE_PATH/app/main.py 未找到，请按 README.vibe.md 指引 scaffold 服务。"
+        fi
+
+  run:bff-admin:
+    desc: 启动 Admin BFF。
+    cmds:
+      - |
+        SERVICE_PATH="apps/bff-admin"
+        PORT=8002
+        if [ -f "$SERVICE_PATH/app/main.py" ]; then
+          (cd "$SERVICE_PATH" && {{.UV}} run uvicorn app.main:app --reload --port $PORT)
+        else
+          echo "⚠️  $SERVICE_PATH/app/main.py 未找到，请按 README.vibe.md 指引 scaffold 服务。"
+        fi
+
+  run:auth-svc:
+    desc: 启动 Auth Service。
+    cmds:
+      - |
+        SERVICE_PATH="apps/auth-svc"
+        PORT=8003
+        if [ -f "$SERVICE_PATH/app/main.py" ]; then
+          (cd "$SERVICE_PATH" && {{.UV}} run uvicorn app.main:app --reload --port $PORT)
+        else
+          echo "⚠️  $SERVICE_PATH/app/main.py 未找到，请按 README.vibe.md 指引 scaffold 服务。"
+        fi
+
+  run:user-svc:
+    desc: 启动 User Service。
+    cmds:
+      - |
+        SERVICE_PATH="apps/user-svc"
+        PORT=8004
+        if [ -f "$SERVICE_PATH/app/main.py" ]; then
+          (cd "$SERVICE_PATH" && {{.UV}} run uvicorn app.main:app --reload --port $PORT)
+        else
+          echo "⚠️  $SERVICE_PATH/app/main.py 未找到，请按 README.vibe.md 指引 scaffold 服务。"
+        fi
+
+  run:risk-svc:
+    desc: 启动 Risk Service。
+    cmds:
+      - |
+        SERVICE_PATH="apps/risk-svc"
+        PORT=8005
+        if [ -f "$SERVICE_PATH/app/main.py" ]; then
+          (cd "$SERVICE_PATH" && {{.UV}} run uvicorn app.main:app --reload --port $PORT)
+        else
+          echo "⚠️  $SERVICE_PATH/app/main.py 未找到，请按 README.vibe.md 指引 scaffold 服务。"
+        fi
+
+  run:loan-svc:
+    desc: 启动 Loan Service。
+    cmds:
+      - |
+        SERVICE_PATH="apps/loan-svc"
+        PORT=8006
+        if [ -f "$SERVICE_PATH/app/main.py" ]; then
+          (cd "$SERVICE_PATH" && {{.UV}} run uvicorn app.main:app --reload --port $PORT)
+        else
+          echo "⚠️  $SERVICE_PATH/app/main.py 未找到，请按 README.vibe.md 指引 scaffold 服务。"
+        fi
+
+  run:payment-svc:
+    desc: 启动 Payment Service。
+    cmds:
+      - |
+        SERVICE_PATH="apps/payment-svc"
+        PORT=8007
+        if [ -f "$SERVICE_PATH/app/main.py" ]; then
+          (cd "$SERVICE_PATH" && {{.UV}} run uvicorn app.main:app --reload --port $PORT)
+        else
+          echo "⚠️  $SERVICE_PATH/app/main.py 未找到，请按 README.vibe.md 指引 scaffold 服务。"
+        fi
+
+  run:ledger-svc:
+    desc: 启动 Ledger Service。
+    cmds:
+      - |
+        SERVICE_PATH="apps/ledger-svc"
+        PORT=8008
+        if [ -f "$SERVICE_PATH/app/main.py" ]; then
+          (cd "$SERVICE_PATH" && {{.UV}} run uvicorn app.main:app --reload --port $PORT)
+        else
+          echo "⚠️  $SERVICE_PATH/app/main.py 未找到，请按 README.vibe.md 指引 scaffold 服务。"
+        fi
+
+  run:notify-svc:
+    desc: 启动 Notify Service。
+    cmds:
+      - |
+        SERVICE_PATH="apps/notify-svc"
+        PORT=8009
+        if [ -f "$SERVICE_PATH/app/main.py" ]; then
+          (cd "$SERVICE_PATH" && {{.UV}} run uvicorn app.main:app --reload --port $PORT)
+        else
+          echo "⚠️  $SERVICE_PATH/app/main.py 未找到，请按 README.vibe.md 指引 scaffold 服务。"
+        fi
+
+  run:collection-svc:
+    desc: 启动 Collection Service。
+    cmds:
+      - |
+        SERVICE_PATH="apps/collection-svc"
+        PORT=8010
+        if [ -f "$SERVICE_PATH/app/main.py" ]; then
+          (cd "$SERVICE_PATH" && {{.UV}} run uvicorn app.main:app --reload --port $PORT)
+        else
+          echo "⚠️  $SERVICE_PATH/app/main.py 未找到，请按 README.vibe.md 指引 scaffold 服务。"
+        fi
+
+  run:channel-svc:
+    desc: 启动 Channel Service。
+    cmds:
+      - |
+        SERVICE_PATH="apps/channel-svc"
+        PORT=8011
+        if [ -f "$SERVICE_PATH/app/main.py" ]; then
+          (cd "$SERVICE_PATH" && {{.UV}} run uvicorn app.main:app --reload --port $PORT)
+        else
+          echo "⚠️  $SERVICE_PATH/app/main.py 未找到，请按 README.vibe.md 指引 scaffold 服务。"
+        fi
+
+  run:report-svc:
+    desc: 启动 Report Service。
+    cmds:
+      - |
+        SERVICE_PATH="apps/report-svc"
+        PORT=8012
+        if [ -f "$SERVICE_PATH/app/main.py" ]; then
+          (cd "$SERVICE_PATH" && {{.UV}} run uvicorn app.main:app --reload --port $PORT)
+        else
+          echo "⚠️  $SERVICE_PATH/app/main.py 未找到，请按 README.vibe.md 指引 scaffold 服务。"
+        fi
+
+  run:p2p-svc:
+    desc: 启动 P2P Service（二期）。
+    cmds:
+      - |
+        SERVICE_PATH="apps/p2p-svc"
+        PORT=8013
+        if [ -f "$SERVICE_PATH/app/main.py" ]; then
+          (cd "$SERVICE_PATH" && {{.UV}} run uvicorn app.main:app --reload --port $PORT)
+        else
+          echo "⚠️  $SERVICE_PATH/app/main.py 未找到，请按 README.vibe.md 指引 scaffold 服务。"
+        fi

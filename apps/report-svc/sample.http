@@ -1,0 +1,11 @@
+### Daily KPI
+GET http://localhost:8012/reports/daily?businessDate=2025-01-01
+Content-Type: application/json
+Accept: application/json
+
+
+### Overdue Aging
+GET http://localhost:8012/reports/aging?bucket=D7
+Content-Type: application/json
+Accept: application/json
+

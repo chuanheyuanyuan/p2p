@@ -1,0 +1,23 @@
+### Send Template
+POST http://localhost:8009/notifications/send
+Content-Type: application/json
+Accept: application/json
+
+{
+  "channel": "sms",
+  "template": "loan_approved",
+  "audience": {
+    "userId": "user-123",
+    "phone": "233555000111"
+  },
+  "variables": {
+    "amount": "500",
+    "dueDate": "2025-01-01"
+  }
+}
+
+### Get Task
+GET http://localhost:8009/notifications/tasks/{{taskId}}
+Content-Type: application/json
+Accept: application/json
+

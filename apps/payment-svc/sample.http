@@ -1,0 +1,29 @@
+### Disburse
+POST http://localhost:8007/payments/disbursements
+Content-Type: application/json
+Accept: application/json
+
+{
+  "loanId": "loan-001",
+  "amount": 500,
+  "currency": "GHS",
+  "channel": "wallet",
+  "account": {
+    "type": "momo",
+    "number": "233555111222",
+    "holderName": "Nancy Doe"
+  }
+}
+
+### Post Repayment
+POST http://localhost:8007/payments/repayments
+Content-Type: application/json
+Accept: application/json
+
+{
+  "loanId": "loan-001",
+  "amount": 520,
+  "currency": "GHS",
+  "channel": "wallet",
+  "txnRef": "TXN123"
+}
