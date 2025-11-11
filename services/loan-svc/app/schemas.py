@@ -29,3 +29,9 @@ class LoanSubmitResponse(BaseModel):
     status: str
     decision: Optional[str]
     score: Optional[int]
+
+
+class ContractResponse(BaseModel):
+    loanId: str
+    contractUrl: str
+    expiresAt: str

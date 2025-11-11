@@ -1,13 +1,15 @@
 from typing import Optional
 
-from fastapi import FastAPI, Query, Path
+from fastapi import FastAPI, Query, Path, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .schemas import ProductListResponse, LoanDraftRequest, LoanSubmitResponse
+from .schemas import ProductListResponse, LoanDraftRequest, LoanSubmitResponse, ContractResponse
 from .service import filter_products, load_products
 from .loan_service import LoanService
 from .risk_client import evaluate
+from .repository import get_application
+from .contract_service import generate_contract
 
 settings = get_settings()
 app = FastAPI(title='loan-svc', version='0.2.0')
@@ -50,3 +52,12 @@ def submit_loan(loan_id: str = Path(...)) -> LoanSubmitResponse:
     app_model.score = score
     app_model.decision_reason = decision
     return LoanSubmitResponse(loanId=app_model.loan_id, status=app_model.status, decision=decision, score=score)
+
+
+@app.get('/loans/{loan_id}/contracts', response_model=ContractResponse)
+def get_contract(loan_id: str = Path(...)) -> ContractResponse:
+    app_model = get_application(loan_id)
+    if not app_model:
+        raise HTTPException(status_code=404, detail='loan not found')
+    contract = generate_contract(app_model)
+    return ContractResponse(**contract)

@@ -17,6 +17,9 @@ uvicorn app.main:app --reload --port 8083
 ## 接口
 - `GET /loan/products`：返回全部产品。
 - `GET /loan/products?productId=P_BASIC`：指定产品。
+- `POST /loans`：创建贷款草稿。
+- `POST /loans/{loanId}/submit`：提交申请并获得决策（调用 risk stub）。
+- `GET /loans/{loanId}/contracts`：生成合同快照（stub，返回本地文件路径）。
 
 ## TODO
 1. 增加配置刷新接口（POST /loan/products/reload）。

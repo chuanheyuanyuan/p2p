@@ -1,0 +1,6 @@
+Loan ID: 760aa2378da64879b384b18c083921b6
+User ID: U10002
+Product: P_BASIC
+Amount: 500.0
+Term: 14 days
+Generated at: 2025-11-11T07:28:58.005836
