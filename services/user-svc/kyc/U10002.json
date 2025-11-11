@@ -1,0 +1,13 @@
+{
+  "status": "REVIEWING",
+  "docType": "ID_CARD",
+  "docNumber": "GHA-123456",
+  "selfieUrl": "https://s3/selfie.jpg",
+  "docFrontUrl": "https://s3/front.jpg",
+  "docBackUrl": "https://s3/back.jpg",
+  "meta": {
+    "ocrScore": 0.97
+  },
+  "reviewer": "kyc-agent-1",
+  "reviewedAt": null
+}

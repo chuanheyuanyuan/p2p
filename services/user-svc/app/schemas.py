@@ -1,4 +1,6 @@
 from datetime import datetime
+from typing import Optional
+
 from pydantic import BaseModel, Field, constr
 
 
@@ -32,3 +34,43 @@ class DeviceResponse(BaseModel):
     privacyConsent: bool
     locationConsent: bool
     lastActiveAt: datetime
+
+
+class KycPayload(BaseModel):
+    status: constr(min_length=4, max_length=32)
+    docType: Optional[str] = None
+    docNumber: Optional[str] = None
+    selfieUrl: Optional[str] = None
+    docFrontUrl: Optional[str] = None
+    docBackUrl: Optional[str] = None
+    meta: Optional[dict] = None
+    reviewer: Optional[str] = None
+    reviewedAt: Optional[datetime] = None
+
+    class Config:
+        json_schema_extra = {
+            'example': {
+                'status': 'REVIEWING',
+                'docType': 'ID_CARD',
+                'docNumber': 'GHA-123456',
+                'selfieUrl': 'https://s3/kyc/selfie.jpg',
+                'docFrontUrl': 'https://s3/kyc/front.jpg',
+                'docBackUrl': 'https://s3/kyc/back.jpg',
+                'meta': {'ocrScore': 0.97},
+                'reviewer': 'kyc-agent-1'
+            }
+        }
+
+
+class KycResponse(BaseModel):
+    userId: str
+    status: str
+    docType: Optional[str]
+    docNumber: Optional[str]
+    selfieUrl: Optional[str]
+    docFrontUrl: Optional[str]
+    docBackUrl: Optional[str]
+    reviewer: Optional[str]
+    reviewedAt: Optional[str]
+    updatedAt: str
+    metaPath: str

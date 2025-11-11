@@ -1,13 +1,15 @@
-from fastapi import FastAPI, HTTPException, Path
+from fastapi import FastAPI, Path
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
 from .database import init_db
 from .repository import upsert_device
-from .schemas import DevicePayload, DeviceResponse
+from .schemas import DevicePayload, DeviceResponse, KycPayload, KycResponse
+from .kyc_service import KycService
 
 app = FastAPI(title='user-svc', version='0.1.0')
 settings = get_settings()
+kyc_service = KycService()
 
 app.add_middleware(
     CORSMiddleware,
@@ -57,3 +59,11 @@ async def put_device(
         locationConsent=bool(record['location_consent']),
         lastActiveAt=record['last_active_at']
     )
+
+
+@app.put('/users/{user_id}/kyc', response_model=KycResponse)
+async def put_kyc(
+    payload: KycPayload,
+    user_id: str = Path(..., min_length=3, max_length=64)
+) -> KycResponse:
+    return kyc_service.save_kyc(user_id, payload)

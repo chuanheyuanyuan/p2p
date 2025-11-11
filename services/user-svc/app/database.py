@@ -20,6 +20,22 @@ CREATE TABLE IF NOT EXISTS user_devices (
     UNIQUE(user_id, fingerprint)
 );
 CREATE INDEX IF NOT EXISTS idx_user_devices_user ON user_devices(user_id);
+CREATE TABLE IF NOT EXISTS user_kyc (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    kyc_status TEXT NOT NULL,
+    doc_type TEXT,
+    doc_number TEXT,
+    selfie_url TEXT,
+    doc_front_url TEXT,
+    doc_back_url TEXT,
+    meta_json TEXT,
+    reviewer TEXT,
+    reviewed_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(user_id)
+);
 """
 
 _settings = get_settings()
