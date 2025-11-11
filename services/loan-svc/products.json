@@ -1,0 +1,28 @@
+[
+  {
+    "productId": "P_BASIC",
+    "name": "InsCash Basic",
+    "currency": "GHS",
+    "amountMin": 100,
+    "amountMax": 800,
+    "defaultTerm": 14,
+    "termOptions": [
+      {"termDays": 7, "feeRate": 0.15},
+      {"termDays": 14, "feeRate": 0.2}
+    ],
+    "enabled": true
+  },
+  {
+    "productId": "P_MAX",
+    "name": "InsCash Max",
+    "currency": "GHS",
+    "amountMin": 300,
+    "amountMax": 1500,
+    "defaultTerm": 28,
+    "termOptions": [
+      {"termDays": 14, "feeRate": 0.18},
+      {"termDays": 28, "feeRate": 0.25}
+    ],
+    "enabled": true
+  }
+]
