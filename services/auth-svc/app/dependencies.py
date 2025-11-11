@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import Depends
 
 from .config import Settings, get_settings
@@ -7,9 +9,14 @@ from .service import OTPService
 from .token_service import TokenService
 from .storage import BaseBackend, get_backend
 
+_backend_cache: Optional[BaseBackend] = None
+
 
 def get_backend_dep(settings: Settings = Depends(get_settings)) -> BaseBackend:
-    return get_backend(settings.redis_url)
+    global _backend_cache
+    if _backend_cache is None:
+        _backend_cache = get_backend(settings.redis_url)
+    return _backend_cache
 
 
 def get_rate_limiter(
