@@ -1,5 +1,5 @@
 ### Disburse
-POST http://localhost:8007/payments/disbursements
+POST http://localhost:8084/payments/disbursements
 Content-Type: application/json
 Accept: application/json
 
@@ -16,7 +16,7 @@ Accept: application/json
 }
 
 ### Post Repayment
-POST http://localhost:8007/payments/repayments
+POST http://localhost:8084/payments/repayments
 Content-Type: application/json
 Accept: application/json
 
@@ -27,3 +27,6 @@ Accept: application/json
   "channel": "wallet",
   "txnRef": "TXN123"
 }
+
+### Inspect Repayments
+GET http://localhost:8084/payments/repayments

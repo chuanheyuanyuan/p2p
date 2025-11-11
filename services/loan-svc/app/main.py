@@ -4,16 +4,25 @@ from fastapi import FastAPI, Query, Path, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .schemas import ProductListResponse, LoanDraftRequest, LoanSubmitResponse, ContractResponse
+from .schemas import (
+    ProductListResponse,
+    LoanDraftRequest,
+    LoanSubmitResponse,
+    ContractResponse,
+    RepaymentApplyRequest,
+    RepaymentApplyResponse,
+)
 from .service import filter_products, load_products
 from .loan_service import LoanService
 from .risk_client import evaluate
 from .repository import get_application
 from .contract_service import generate_contract
+from .billing_service import LoanBillingService
 
 settings = get_settings()
 app = FastAPI(title='loan-svc', version='0.2.0')
-loan_service = LoanService()
+billing_service = LoanBillingService()
+loan_service = LoanService(billing_service=billing_service)
 
 app.add_middleware(
     CORSMiddleware,
@@ -61,3 +70,21 @@ def get_contract(loan_id: str = Path(...)) -> ContractResponse:
         raise HTTPException(status_code=404, detail='loan not found')
     contract = generate_contract(app_model)
     return ContractResponse(**contract)
+
+
+@app.post('/loans/{loan_id}/repayments', response_model=RepaymentApplyResponse)
+def apply_repayment(payload: RepaymentApplyRequest, loan_id: str = Path(...)) -> RepaymentApplyResponse:
+    schedule, applied = billing_service.apply_repayment(
+        loan_id=loan_id,
+        amount=payload.amount,
+        currency=payload.currency,
+        paid_at=payload.paidAt
+    )
+    return RepaymentApplyResponse(
+        loanId=loan_id,
+        appliedAmount=applied,
+        remainingDue=schedule.outstanding_amount,
+        currency=schedule.currency,
+        status=schedule.status,
+        lastPaidAt=schedule.last_paid_at
+    )
