@@ -1,13 +1,30 @@
-import { Card, Col, Descriptions, Empty, Row, Tabs, Timeline, Typography } from 'antd';
+import { Alert, Card, Col, Descriptions, Empty, Row, Spin, Tabs, Timeline, Typography } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
-import { applicationDetailsMock, type ApprovalNode, type ApplicationHistoryEntry } from '../mocks/data';
+import { useRequest } from 'ahooks';
+import type { ApplicationDetail as ApplicationDetailType, ApprovalNode, ApplicationHistoryEntry } from '../mocks/data';
+import { fetchApplicationById } from '../services/api';
 
 const ApplicationDetail = () => {
   const { id = '' } = useParams();
   const navigate = useNavigate();
-  const detail = applicationDetailsMock[id];
 
-  if (!detail) {
+  const { data, loading, error } = useRequest<ApplicationDetailType | undefined, []>(() => fetchApplicationById(id), {
+    ready: Boolean(id)
+  });
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '48px 0' }}>
+        <Spin />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <Alert type="error" message="拉取申请详情失败" description={(error as Error).message} />;
+  }
+
+  if (!data) {
     return (
       <Card>
         <Empty description={`未找到编号为 ${id} 的申请`} />
@@ -15,7 +32,7 @@ const ApplicationDetail = () => {
     );
   }
 
-  const { application, basic, approval, history } = detail;
+  const { application, basic, approval, history } = data;
 
   return (
     <Tabs

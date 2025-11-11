@@ -1,18 +1,37 @@
-import { Card, Col, Descriptions, Empty, Row, Space, Tag, Typography } from 'antd';
+import { Alert, Card, Col, Descriptions, Empty, Row, Space, Spin, Tag, Typography } from 'antd';
 import { useParams } from 'react-router-dom';
-import { userProfilesMock } from '../mocks/data';
+import { useRequest } from 'ahooks';
+import type { UserProfile as UserProfileType } from '../mocks/data';
+import { fetchUserProfile } from '../services/api';
 
 const UserProfile = () => {
   const { userId = '' } = useParams();
-  const profile = userProfilesMock[userId];
 
-  if (!profile) {
+  const { data, loading, error } = useRequest<UserProfileType | undefined, []>(() => fetchUserProfile(userId), {
+    ready: Boolean(userId)
+  });
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '48px 0' }}>
+        <Spin />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <Alert type="error" message="获取用户档案失败" description={(error as Error).message} />;
+  }
+
+  if (!data) {
     return (
       <Card>
         <Empty description={`未找到用户 ${userId}`} />
       </Card>
     );
   }
+
+  const profile = data;
 
   return (
     <Space direction="vertical" size={24} style={{ width: '100%' }}>
