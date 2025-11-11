@@ -1,13 +1,14 @@
 {
-  "status": "REVIEWING",
+  "status": "REJECTED",
   "docType": "ID_CARD",
   "docNumber": "GHA-123456",
   "selfieUrl": "https://s3/selfie.jpg",
   "docFrontUrl": "https://s3/front.jpg",
   "docBackUrl": "https://s3/back.jpg",
   "meta": {
-    "ocrScore": 0.97
+    "ocrScore": 0.6,
+    "reason": "blurred selfie"
   },
   "reviewer": "kyc-agent-1",
-  "reviewedAt": null
+  "reviewedAt": "2025-11-11T05:30:00+00:00"
 }
