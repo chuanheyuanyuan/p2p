@@ -1,0 +1,36 @@
+{
+  "loan_approved": {
+    "description": "Loan approval confirmation for borrowers",
+    "category": "system",
+    "locale": "en_GH",
+    "channels": ["sms", "email", "whatsapp"],
+    "requiredVariables": ["borrowerName", "loanId", "amount", "dueDate"],
+    "bodies": {
+      "default": "Hi {{ borrowerName }}, your loan {{ loanId }} for {{ amount }} has been approved. First repayment is due on {{ dueDate }}."
+    }
+  },
+  "repayment_posted": {
+    "description": "Repayment acknowledgement",
+    "category": "system",
+    "locale": "en_GH",
+    "channels": ["sms", "email", "whatsapp"],
+    "requiredVariables": ["borrowerName", "loanId", "amount", "remainingDue"],
+    "bodies": {
+      "sms": "Hi {{ borrowerName }}, we received {{ amount }} for loan {{ loanId }}. Remaining due: {{ remainingDue }}.",
+      "email": "Dear {{ borrowerName }}, we received a repayment of {{ amount }} for loan {{ loanId }}. Your remaining amount is {{ remainingDue }}.",
+      "whatsapp": "Repayment received for {{ loanId }}: {{ amount }}. Outstanding {{ remainingDue }}."
+    }
+  },
+  "due_soon": {
+    "description": "Reminder before the due date",
+    "category": "collections",
+    "locale": "en_GH",
+    "channels": ["sms", "push", "whatsapp"],
+    "requiredVariables": ["borrowerName", "loanId", "dueDate", "amount", "paymentLink"],
+    "bodies": {
+      "sms": "Reminder: {{ borrowerName }}, loan {{ loanId }} of {{ amount }} is due on {{ dueDate }}. Pay via {{ paymentLink }}.",
+      "push": "Loan {{ loanId }} is due {{ dueDate }}. Tap to pay: {{ paymentLink }}",
+      "whatsapp": "Hi {{ borrowerName }}, your loan {{ loanId }} ({{ amount }}) is due {{ dueDate }}. Settle now: {{ paymentLink }}"
+    }
+  }
+}

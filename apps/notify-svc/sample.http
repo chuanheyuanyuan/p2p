@@ -1,7 +1,8 @@
-### Send Template
+### Loan Approved (SMS)
 POST http://localhost:8009/notifications/send
 Content-Type: application/json
 Accept: application/json
+X-Idempotency-Key: sms-loan-approved-demo
 
 {
   "channel": "sms",
@@ -11,8 +12,32 @@ Accept: application/json
     "phone": "233555000111"
   },
   "variables": {
-    "amount": "500",
-    "dueDate": "2025-01-01"
+    "borrowerName": "Ama",
+    "loanId": "LN20241123001",
+    "amount": "500 GHS",
+    "dueDate": "2024-12-01"
+  }
+}
+
+### Due Soon Reminder (WhatsApp)
+POST http://localhost:8009/notifications/send
+Content-Type: application/json
+Accept: application/json
+X-Idempotency-Key: whatsapp-due-soon-demo
+
+{
+  "channel": "whatsapp",
+  "template": "due_soon",
+  "audience": {
+    "userId": "user-123",
+    "phone": "233555000111"
+  },
+  "variables": {
+    "borrowerName": "Ama",
+    "loanId": "LN20241123001",
+    "amount": "500 GHS",
+    "dueDate": "2024-12-01",
+    "paymentLink": "https://pay.example.com/LN20241123001"
   }
 }
 
@@ -20,4 +45,3 @@ Accept: application/json
 GET http://localhost:8009/notifications/tasks/{{taskId}}
 Content-Type: application/json
 Accept: application/json
-

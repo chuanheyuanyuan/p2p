@@ -3,23 +3,22 @@
 > Domain: 多渠道通知
 
 ## ⚡ Quickstart
-1. `task run:notify-svc` — 启动本服务（若 `app/main.py` 尚未创建会给出提示）。
-2. `task lint` / `task test` — 统一代码质量与测试（基于 ruff + pytest）。
-3. 使用 VS Code REST Client 打开 `sample.http`，即可在 vibe coding 中快速回放接口。
+1. `cd services/notify-svc && python3 -m venv .venv && source .venv/bin/activate`
+2. `pip install -r requirements.txt`
+3. `uvicorn app.main:app --reload --port 8009`
 
-## 🔌 API 快速体验
-- 默认本地地址：`http://localhost:8009`
-- 推荐带上 `X-Request-Id` 方便链路追踪。
-- 事件钩子：NOTIFY_ENQUEUED, NOTIFY_SENT, NOTIFY_FAILED。
+## 🔌 API
+- `POST /notifications/send` —— 必须带 `X-Idempotency-Key`，提交模板、变量与受众，立即生成发送任务；成功会触发 `NOTIFY_ENQUEUED` 与 `NOTIFY_SENT`（或 `NOTIFY_FAILED`）。
+- `GET /notifications/tasks/{taskId}` —— 查询任务状态、正文、错误信息，方便排障。
+- 健康检查：`GET /healthz`
 
-## 🧰 文件约定
-- `app/` 目录放 FastAPI 入口、路由与依赖。
-- `domain/` 目录放 Pydantic/SQLModel 聚合（待创建）。
-- `README.vibe.md` + `sample.http` 永远同步更新，供 vibe/LLM 获取上下文。
+## 🧰 目录说明
+- `app/config.py`：服务配置、模板路径。
+- `app/template_engine.py`：加载 `templates/catalog.json` 并用 Jinja2 渲染，强校验 `requiredVariables`。
+- `app/channel_client.py`：Mock 通道适配器，检查渠道所需的受众字段。
+- `app/repository.py`：SQLite (`notify.db`) 持久化任务，与幂等键 (`idempotency_key`) 关联。
 
-## 👀 观测 & 调试
-- 健康检查：`GET /healthz`（所有服务需实现）。
-- 指标：`/metrics` 暴露 Prometheus 采集结果。
-- 日志：建议使用 `structlog` 并包含 `trace_id`、`span_id`、`principal` 字段。
-
-> TODO: 在实现阶段记得更新本文件，确保步骤与端点和代码保持一致。
+## 👀 调试提示
+- `sample.http` 覆盖“放款成功”“到期提醒”两个模板调用，可直接在 VS Code 里回放。
+- 事件日志：`NOTIFY_ENQUEUED`/`NOTIFY_SENT`/`NOTIFY_FAILED`/`CHANNEL_DISPATCHED`，用于串联 loan/payment → notify → collection 链路。
+- 若携带 `sendAt` 且在未来，任务状态为 `SCHEDULED`，待后续调度器消费（当前版本暂未实现）。
