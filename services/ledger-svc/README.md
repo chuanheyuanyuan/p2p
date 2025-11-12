@@ -5,7 +5,7 @@
 ## 功能
 - 接收 `refType/refId` 和多条分录行，每行包含 `account`, `debit`, `credit`, `currency`, `memo`。
 - 校验：Σdebit == Σcredit，金额使用 Decimal(18,4) 精度。
-- 通过内存仓库存储，返回 `entryId`；后续可扩展到数据库。
+- 使用本地 `ledger.db`（SQLite）持久化分录，返回 `entryId`，便于后续对账/查询。
 
 ## 运行
 ```bash
@@ -35,6 +35,6 @@ Content-Type: application/json
 ```
 
 ## TODO
-- 持久化 & 幂等锁（Redis）
-- 接入事件流，与报表/风险同步
+- 接入 Redis 幂等锁
+- 消费事件流，与报表/风险服务对账
 - 添加 `GET /ledger/entries?refId=` 查询接口

@@ -3,14 +3,14 @@
 > Domain: 催收建案与工作台
 
 ## ⚡ Quickstart
-1. `task run:collection-svc` — 启动本服务（若 `app/main.py` 尚未创建会给出提示）。
+1. `cd services/collection-svc && uvicorn app.main:app --reload --port 8086`（或使用 `task run:collection-svc` 结合 `COLLECTOR_POOL` 环境变量）。
 2. `task lint` / `task test` — 统一代码质量与测试（基于 ruff + pytest）。
 3. 使用 VS Code REST Client 打开 `sample.http`，即可在 vibe coding 中快速回放接口。
 
 ## 🔌 API 快速体验
-- 默认本地地址：`http://localhost:8010`
+- 默认本地地址：`http://localhost:8086`
 - 推荐带上 `X-Request-Id` 方便链路追踪。
-- 事件钩子：CASE_CREATED, CASE_ACTION_LOGGED, PTP_PROMISE_SET。
+- 事件钩子：CASE_CREATED, CASE_ACTION_LOGGED, PTP_PROMISE_SET, CASE_BUCKET_SYNCED, CASE_PAYMENT_APPLIED。
 
 ## 🧰 文件约定
 - `app/` 目录放 FastAPI 入口、路由与依赖。
@@ -22,4 +22,4 @@
 - 指标：`/metrics` 暴露 Prometheus 采集结果。
 - 日志：建议使用 `structlog` 并包含 `trace_id`、`span_id`、`principal` 字段。
 
-> TODO: 在实现阶段记得更新本文件，确保步骤与端点和代码保持一致。
+> 现已支持 `POST /collections/cases`、`GET /collections/cases`、`POST /collections/cases/{id}/actions`、`POST /events/loan`、`POST /events/payment`。如需对接真实 Kafka/DB，可在此基础上扩展。

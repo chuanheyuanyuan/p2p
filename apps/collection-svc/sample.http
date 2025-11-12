@@ -1,5 +1,5 @@
 ### Create Case
-POST http://localhost:8010/collections/cases
+POST http://localhost:8086/collections/cases
 Content-Type: application/json
 Accept: application/json
 
@@ -12,7 +12,7 @@ Accept: application/json
 }
 
 ### Record Action
-POST http://localhost:8010/collections/cases/{{caseId}}/actions
+POST http://localhost:8086/collections/cases/{{caseId}}/actions
 Content-Type: application/json
 Accept: application/json
 
@@ -20,4 +20,30 @@ Accept: application/json
   "actionType": "CALL",
       "actor": "collector-1",
       "note": "Promised to pay tomorrow"
+}
+
+### Loan Event -> Auto Case
+POST http://localhost:8086/events/loan
+Content-Type: application/json
+Accept: application/json
+
+{
+  "eventType": "OVERDUE_BUCKET_CHANGED",
+  "loanId": "loan-002",
+  "userId": "user-789",
+  "bucket": "D3",
+  "principalDue": "800.00",
+  "currency": "GHS"
+}
+
+### Payment Event -> Auto Close
+POST http://localhost:8086/events/payment
+Content-Type: application/json
+Accept: application/json
+
+{
+  "eventType": "REPAYMENT_POSTED",
+  "loanId": "loan-001",
+  "remainingDue": "0",
+  "actor": "payment-svc"
 }

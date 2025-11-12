@@ -37,19 +37,33 @@
 
 ### ledger-svc（T10）
 - 目录：`services/ledger-svc/`，端口 8085。
-- `POST /ledger/entries`：校验借贷平衡（Decimal 18,4），生成 `entryId` 并在内存存储 entry。
+- `POST /ledger/entries`：校验借贷平衡（Decimal 18,4），生成 `entryId` 并写入 `ledger.db`（SQLite）便于对账。
 
 ### payment-svc + loan-svc（T11）
-- payment-svc 增加 `POST /payments/repayments`（登记主动/回调还款，写入内存仓储并调用 loan-svc 刷新账单）、`GET /payments/repayments`（调试列表），并通过 `REPAYMENT_POSTED` 事件日志输出；新增 `LOAN_SVC_BASE_URL` 配置，金额统一使用 `Decimal(18,4)`。
-- loan-svc 新增账单调度模块（`LoanBillingService`），创建贷款草稿时即初始化 schedule，`POST /loans/{loanId}/repayments` 接口扣减应还金额，支持多次/部分还款并在结清时标记 `REPAID`。
+- payment-svc 增加 `POST /payments/repayments`（登记主动/回调还款，写入 `payment.db` 并调用 loan-svc 刷新账单）、`GET /payments/repayments`（调试列表），并通过 `REPAYMENT_POSTED` 事件日志输出；新增 `LOAN_SVC_BASE_URL` 配置，金额统一使用 `Decimal(18,4)`。
+- loan-svc 新增账单调度模块（`LoanBillingService`），创建贷款草稿时即初始化 schedule，`POST /loans/{loanId}/repayments` 接口扣减应还金额，支持多次/部分还款并在结清时标记 `REPAID`；贷款草稿与还款计划统一持久化到 `loan.db`。
 - 还款请求按照 txnRef 幂等，payment-svc 成功调用后会记录 `appliedAmount/remainingDue`，重复请求直接返回已有结果；两端均保持 3.9 兼容写法。
 - 调试方式：同时启动 loan-svc 与 payment-svc，先调用 loan-svc 的 `POST /loans` 创建草稿，再用 `apps/payment-svc/sample.http` 里的还款示例触发账单扣减，可通过 `GET /payments/repayments` 或 loan-svc 还款接口返回体查看剩余应还。
+
+- 目录：`services/collection-svc/`，端口 8086。内置 `AssignmentService`，可通过 `COLLECTOR_POOL` 环境变量覆盖坐席轮询列表，案件与行动存储在 `collection.db`。
+- `POST /collections/cases`：创建催收案件，按 loanId 防重，校验 bucket/金额并自动分案，同时打印 `CASE_CREATED` 事件。
+- `GET /collections/cases`、`GET /collections/cases/{id}`：支持 bucket/status/assignedTo 过滤，返回案件及历史动作。
+- `POST /collections/cases/{id}/actions`：记录 CALL/SMS/N0TE 等动作，允许带 `status`、`ptpAmount/ptpDueAt` 触发状态流转，输出 `CASE_ACTION_LOGGED` / `PTP_PROMISE_SET` 事件。
+- `POST /events/loan`：监听 loan-svc 的 `OVERDUE_BUCKET_CHANGED`/`DUE_TODAY` 等事件自动建案或刷新 bucket + principal，并输出 `CASE_BUCKET_SYNCED`。
+- `POST /events/payment`：消费 payment-svc 的 `REPAYMENT_POSTED`，自动更新 principalDue，结清后转 `PAID`，逾期的 PTP 违约则转 `BROKEN_PTP`，并输出 `CASE_PAYMENT_APPLIED`。
+- 状态机校验非法迁移、已结清案件拒绝再写；调试请求见 `apps/collection-svc/sample.http`。
 
 ## 运行提示与偏好
 - 所有服务都需在对应目录下 `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`。
 - Python 3.9 不支持 `| None`，请使用 `Optional[...]` 并导入 `typing.Optional`。
 - 日志需在 uvicorn 终端查看，必要时增加调试接口（如 payment-svc 的列表接口）。
 - `curl` 是默认验证方式；每个服务 README 中记录了示例。
-- 若服务重启，内存仓库数据会清空（payment-svc、ledger-svc 等），这是预期行为；如需持久化，需后续接入 DB/Redis。
+- 当前 payment-svc、loan-svc、ledger-svc、collection-svc 均已落地 SQLite（*.db）；重启不会丢失数据，但仍建议后续替换为托管数据库/Redis 配置。
 
 此文档供下一窗口继续开发或优化时参考。顺序继续 T11 及后续任务，并延续上述约定。
+
+## 当前交付状态
+- loan-svc/payment-svc/ledger-svc/collection-svc 均已落地 SQLite，本地数据库文件分别为 `loan.db`、`payment.db`、`ledger.db`、`collection.db`，初始化逻辑在各自 `app/database.py` 中随 import 执行。
+- `临时文件` 中记录了手动验证脚本，可按 “loan → payment → ledger → collection” 顺序跑通，并通过 `sqlite3` 查询验证入库数据。
+- ledger-svc 新 repository 使用 JSON 序列化分录行写入 DB；collection-svc 新增 `/events/loan`、`/events/payment` 接口并持久化催收案件/行动，事件日志输出保持不变。
+- 待办：根据需要把 SQLite 替换为 Postgres/Redis，并为 ledger-svc/collection-svc 增加查询接口或迁移脚本。

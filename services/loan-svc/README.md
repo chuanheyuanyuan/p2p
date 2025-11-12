@@ -6,6 +6,7 @@
 - 产品配置写在 `products.json`（或内存常量），字段包含 amountRange、termOptions、feeRate、currency。
 - 支持查询参数过滤（productId），便于 BFF 只拿特定产品。
 - 后续可替换为数据库/配置中心，并注入缓存策略。
+- 贷款草稿与还款 schedule 默认写入 `loan.db`（SQLite），方便与 payment/collection-svc 对接。
 
 ## 运行
 ```bash
