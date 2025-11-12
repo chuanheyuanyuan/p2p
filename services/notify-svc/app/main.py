@@ -98,8 +98,8 @@ def _deliver_task(task: NotificationTask) -> None:
 
     task.status = 'SENT'
     task.sent_at = result.delivered_at
-    task.attempts += 1
     task.last_error = None
+    task.attempts += 1
     save_task(task)
     _emit_event('NOTIFY_SENT', task, extra={'messageId': result.provider_message_id})
 
