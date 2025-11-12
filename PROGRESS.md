@@ -52,6 +52,13 @@
 - `POST /events/loan`：监听 loan-svc 的 `OVERDUE_BUCKET_CHANGED`/`DUE_TODAY` 等事件自动建案或刷新 bucket + principal，并输出 `CASE_BUCKET_SYNCED`。
 - `POST /events/payment`：消费 payment-svc 的 `REPAYMENT_POSTED`，自动更新 principalDue，结清后转 `PAID`，逾期的 PTP 违约则转 `BROKEN_PTP`，并输出 `CASE_PAYMENT_APPLIED`。
 - 状态机校验非法迁移、已结清案件拒绝再写；调试请求见 `apps/collection-svc/sample.http`。
+- `report-svc`（T14）搭建日指标服务：
+  - 目录：`services/report-svc/`，端口 8012，读取 `loan.db`/`payment.db`/`collection.db` 聚合申请/放款/还款/催收指标，并缓存到 `report.db`。
+  - `GET /reports/daily`：必填 `businessDate`，支持 `forceRefresh`，返回 `metrics`、`notes`、`sources` 及生成时间；若数据缺失会自动计算后写库。
+  - `POST /reports/daily/refresh`：手动触发重算，返回 `missingMetrics`/`generatedAt`，便于与调度器集成。
+  - `GET /reports/aging`：按 bucket/全量统计催收案件的状态与数量。
+  - 提供 README、sample.http、调试指令，后续可替换为 Kafka/ClickHouse 数据管道并补齐注册/登录/首逾口径。
+
 
 ## 运行提示与偏好
 - 所有服务都需在对应目录下 `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`。
