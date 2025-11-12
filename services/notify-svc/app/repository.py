@@ -130,6 +130,18 @@ def get_task_by_idempotency(key: str) -> Optional[NotificationTask]:
 
 def get_task_by_idempotency_key(key: str) -> Optional[NotificationTask]:
     return get_task_by_idempotency(key)
+
+
+def get_task_by_idempotency_key(key: str) -> Optional[NotificationTask]:
+    return get_task_by_idempotency(key)
+
+
+def get_task_by_idempotency_key(key: str) -> Optional[NotificationTask]:
+    return get_task_by_idempotency(key)
+
+
+def get_task_by_idempotency_key(key: str) -> Optional[NotificationTask]:
+    return get_task_by_idempotency(key)
 def list_tasks(limit: int = 50) -> List[NotificationTask]:
     with get_connection() as conn:
         rows = conn.execute(
