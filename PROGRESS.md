@@ -52,6 +52,12 @@
 - `POST /events/loan`：监听 loan-svc 的 `OVERDUE_BUCKET_CHANGED`/`DUE_TODAY` 等事件自动建案或刷新 bucket + principal，并输出 `CASE_BUCKET_SYNCED`。
 - `POST /events/payment`：消费 payment-svc 的 `REPAYMENT_POSTED`，自动更新 principalDue，结清后转 `PAID`，逾期的 PTP 违约则转 `BROKEN_PTP`，并输出 `CASE_PAYMENT_APPLIED`。
 - 状态机校验非法迁移、已结清案件拒绝再写；调试请求见 `apps/collection-svc/sample.http`。
+- `notify-svc`（T13）上线，聚合短信/Email/Push/WhatsApp 模板：
+  - 目录：`services/notify-svc/`，端口 8009，对应 DB `notify.db`。
+  - `POST /notifications/send`：要求 `X-Idempotency-Key`，根据 `templates/catalog.json` 渲染正文，校验变量与渠道必填字段；立即触发 mock 通道或根据 `sendAt` 标记 `SCHEDULED`。
+  - `GET /notifications/tasks/{taskId}`：查询任务详情、变量、渲染正文与错误信息。
+  - 模块化 `template_engine` + `channel_client`，输出 `NOTIFY_ENQUEUED/NOTIFY_SENT/NOTIFY_FAILED/CHANNEL_DISPATCHED` 事件，供后续串联 loan/payment/collection。
+  - TODO：接入真实通道、补充模板 CRUD、增加调度/重试与告警。
 
 ## 运行提示与偏好
 - 所有服务都需在对应目录下 `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`。
