@@ -1,3 +1,23 @@
+### Dashboard Overview
+GET http://localhost:8002/admin/v1/dashboard
+Accept: application/json
+
+### Query Daily Stats
+GET http://localhost:8002/admin/v1/reports/daily?startDate=2025-10-16&endDate=2025-10-20&channel=all&repeat=all
+Accept: application/json
+
+### Export Daily Stats
+POST http://localhost:8002/admin/v1/reports/daily/export
+Content-Type: application/json
+Accept: application/json
+
+{
+  "startDate": "2025-10-16",
+  "endDate": "2025-10-20",
+  "channel": "all",
+  "repeat": "all"
+}
+
 ### Admin Login
 POST http://localhost:8002/admin/v1/auth/login
 Content-Type: application/json

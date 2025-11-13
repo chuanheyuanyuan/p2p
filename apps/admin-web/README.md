@@ -40,7 +40,9 @@ src/
 - 申请详情：基本信息 + 审批节点 + 历史记录。
 - 用户档案：身份信息、风控状态、标签/风险提示。
 - 催收工作台：案件列表、Drawer 工作台、PTP/外呼/跟进表单，支持本地记录。
-- Dashboard / Daily Stats / Ops Config / App 升级等基础页面。
+- Dashboard：接入 `/admin/v1/dashboard`（mock fallback），展示 KPI、逾期概览、催回进度、今日指标、新客转化率，支持错误提示与重试。
+- Daily Stats：对接 `/admin/v1/reports/daily`，提供时间/渠道/复借筛选、指标汇总、导出任务触发。
+- Ops Config / App 升级等基础页面。
 
 ## 登录与权限
 

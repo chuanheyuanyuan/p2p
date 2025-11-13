@@ -4,6 +4,35 @@ export interface DashboardKpi {
   delta: string;
 }
 
+export interface DashboardStats {
+  kpis: DashboardKpi[];
+  overdue: {
+    rate: number;
+    dueToday: number;
+    repaid: number;
+    yesterdayRate: number;
+    progress: number;
+  };
+  recovery: {
+    cases: number;
+    assigned: number;
+    note: string;
+  };
+  today: {
+    installs: number;
+    regs: number;
+    logins: number;
+    applies: number;
+    disburses: number;
+    repayments: number;
+  };
+  conversion: {
+    percent: number;
+    numerator: number;
+    denominator: number;
+  };
+}
+
 export interface DailyStat {
   date: string;
   installs: number;
@@ -198,6 +227,35 @@ export const dashboardKpis: DashboardKpi[] = [
   { label: '登录人数', value: '15', delta: '老客 14 · 新客 1' },
   { label: '催回金额', value: '₵0', delta: '今日已分配 0 单' }
 ];
+
+export const dashboardMock: DashboardStats = {
+  kpis: dashboardKpis,
+  overdue: {
+    rate: 38.19,
+    dueToday: 166,
+    repaid: 18,
+    yesterdayRate: 45.61,
+    progress: 65
+  },
+  recovery: {
+    cases: 0,
+    assigned: 0,
+    note: '今日已分配 0 · 催收团队待命'
+  },
+  today: {
+    installs: 48,
+    regs: 1,
+    logins: 15,
+    applies: 27,
+    disburses: 15,
+    repayments: 15
+  },
+  conversion: {
+    percent: 12,
+    numerator: 27,
+    denominator: 220
+  }
+};
 
 export const dailyStatsMock: DailyStat[] = [
   { date: '2025-10-20', installs: 48, regs: 1, logins: 0, applies: 27, disburses: 15, repayments: 15, amount: 93800 },

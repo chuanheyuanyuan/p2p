@@ -22,6 +22,7 @@
 - 数据请求全部通过 React Query（`src/main.tsx` 注入 `QueryClientProvider`），分页/详情等均以 `queryKey` 管理。
 - 全局状态采用 Zustand（`src/store/auth.ts`），并提供 `select*` selector 便于组件订阅。
 - Mock 数据位于 `src/mocks/data.ts`，若无真实 BFF 会在 `services/api` 中自动 fallback。
+- Dashboard & Daily Stats（M2）已接入 `fetchDashboardOverview`、`fetchDailyStats`，支持错误提示、Skeleton、导出任务触发（`exportDailyStats`）。
 
 ## 🧪 Testing
 - `npm run test` —— Vitest + React Testing Library，当前覆盖 Sidebar RBAC 过滤（`src/components/__tests__/Sidebar.test.tsx`）。

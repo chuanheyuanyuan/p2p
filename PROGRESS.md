@@ -71,6 +71,12 @@
 - `Sidebar` RBAC 过滤已写 Vitest+RTL 单测（`npm run test`），默认 mock 账号包括 `ops.lead`、`collector.jr`、`analyst`，方便验证不同视角。
 - 文档更新：`apps/admin-web/README.md`/`README.vibe.md` 说明登录流程与角色；`apps/bff-admin/sample.http` 增加 `/admin/v1/auth/login`/`/auth/me` 示例，便于后端联调。
 
+### admin-web（T19 · M2 Dashboard + Daily Stats）
+- Dashboard 页面接入 `fetchDashboardOverview`，对接 `/admin/v1/dashboard`（mock fallback），新增 KPI 卡片、逾期概览、催回进度、今日指标、新客转化率，支持 Skeleton、错误提示与重试按钮。
+- Daily Stats 页面扩展 React Query 状态、摘要统计（`summarizeDailyStats`）、导出按钮（触发 `/admin/v1/reports/daily/export`），并通过 `Alert` 告警接口拉取失败。
+- 新增 `exportDailyStats` Service、`dashboardMock` 数据结构及 `Dashboard` 组件加载态；补充 `apps/admin-web/src/utils/__tests__/dailyStats.test.ts` 单侧保障聚合逻辑。
+- 文档/sample 更新：`README.md`、`README.vibe.md` 说明 M2 功能；`apps/bff-admin/sample.http` 增加 dashboard/daily APIs 及导出示例；`整体开发计划.md` 标记 M2 进度。
+
 ## 运行提示与偏好
 - 所有服务都需在对应目录下 `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`。
 - Python 3.9 不支持 `| None`，请使用 `Optional[...]` 并导入 `typing.Optional`。

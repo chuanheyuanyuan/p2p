@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { act } from 'react';
 import Sidebar from '../Sidebar';
 import { useAuthStore } from '../../store/auth';
+import { summarizeDailyStats } from '../../utils/dailyStats';
 
 type PersistHelpers = {
   hasHydrated?: () => boolean;
@@ -74,5 +75,19 @@ describe('Sidebar RBAC', () => {
       renderSidebar();
     });
     expect(screen.getByText('当前角色暂无菜单，请联系管理员。')).toBeInTheDocument();
+
+    const summary = summarizeDailyStats([
+      { date: '2025-10-20', installs: 48, regs: 1, logins: 0, applies: 27, disburses: 15, repayments: 15, amount: 93800 },
+      { date: '2025-10-19', installs: 197, regs: 7, logins: 7, applies: 110, disburses: 54, repayments: 25, amount: 20195 }
+    ]);
+
+    expect(summary).toEqual({
+      installs: 245,
+      regs: 8,
+      applies: 137,
+      disburses: 69,
+      repayments: 40,
+      amount: 113995
+    });
   });
 });

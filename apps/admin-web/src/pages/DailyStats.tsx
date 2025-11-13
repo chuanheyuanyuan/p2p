@@ -1,9 +1,23 @@
 import { useMemo, useState } from 'react';
-import { Button, Card, DatePicker, Form, Select, Space, Statistic, Table, type TableColumnsType } from 'antd';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import {
+  Alert,
+  Button,
+  Card,
+  DatePicker,
+  Form,
+  message,
+  Select,
+  Space,
+  Statistic,
+  Table,
+  Typography,
+  type TableColumnsType
+} from 'antd';
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import type { DailyStat } from '../mocks/data';
-import { fetchDailyStats, type DailyStatsQuery } from '../services/api';
+import { exportDailyStats, fetchDailyStats, type DailyStatsQuery } from '../services/api';
+import { summarizeDailyStats } from '../utils/dailyStats';
 
 const { RangePicker } = DatePicker;
 
@@ -18,7 +32,7 @@ const DailyStats = () => {
     pageSize: 10
   });
 
-  const { data, isFetching } = useQuery({
+  const { data, isPending, isFetching, error, refetch } = useQuery({
     queryKey: ['daily-stats', query],
     queryFn: () => fetchDailyStats(query),
     placeholderData: keepPreviousData,
@@ -27,19 +41,15 @@ const DailyStats = () => {
 
   const list = data?.list ?? [];
 
-  const summary = useMemo(() => {
-    return list.reduce(
-      (acc, item) => {
-        acc.installs += item.installs;
-        acc.regs += item.regs;
-        acc.applies += item.applies;
-        acc.disburses += item.disburses;
-        acc.amount += item.amount;
-        return acc;
-      },
-      { installs: 0, regs: 0, applies: 0, disburses: 0, amount: 0 }
-    );
-  }, [list]);
+  const summary = useMemo(() => summarizeDailyStats(list), [list]);
+
+  const exportMutation = useMutation({
+    mutationFn: () => exportDailyStats(query),
+    onSuccess: (result) => message.success(`已创建导出任务：${result.taskId}`),
+    onError: (err) => {
+      message.error(err instanceof Error ? err.message : '导出失败，请稍后再试');
+    }
+  });
 
   const columns: TableColumnsType<DailyStat> = [
     { title: '日期', dataIndex: 'date' },
@@ -69,8 +79,24 @@ const DailyStats = () => {
     });
   };
 
+  const handleExport = () => {
+    exportMutation.mutate();
+  };
+
   return (
     <Space direction="vertical" size={24} style={{ width: '100%' }}>
+      {error && (
+        <Alert
+          type="error"
+          message="日报数据拉取失败"
+          description={(error as Error).message}
+          action={
+            <Button size="small" onClick={() => refetch()} loading={isFetching}>
+              重试
+            </Button>
+          }
+        />
+      )}
       <Card>
         <Form
           layout="vertical"
@@ -97,6 +123,9 @@ const DailyStats = () => {
               查询
             </Button>
             <Button onClick={() => { form.resetFields(); handleSearch(); }}>重置</Button>
+            <Button onClick={handleExport} loading={exportMutation.isPending}>
+              导出
+            </Button>
           </Space>
         </Form>
       </Card>
@@ -109,6 +138,9 @@ const DailyStats = () => {
           <Statistic title="期间放款笔数" value={summary.disburses} />
           <Statistic title="期间放款金额" value={`₵${summary.amount.toLocaleString()}`} />
         </Space>
+        <Typography.Paragraph type="secondary" style={{ marginTop: 16 }}>
+          数据来自 report-svc `/reports/daily`，默认 15 分钟刷新；导出按钮将创建后台任务。
+        </Typography.Paragraph>
       </Card>
 
       <Card>
@@ -116,7 +148,7 @@ const DailyStats = () => {
           rowKey="date"
           columns={columns}
           dataSource={list}
-          loading={isFetching}
+          loading={isPending || isFetching}
           pagination={{
             current: query.page,
             pageSize: query.pageSize,

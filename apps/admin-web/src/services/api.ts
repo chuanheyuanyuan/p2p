@@ -5,6 +5,7 @@ import type {
   CollectionCase,
   CollectionCaseDetail,
   DailyStat,
+  DashboardStats,
   UserProfile
 } from '../mocks/data';
 import {
@@ -13,6 +14,7 @@ import {
   collectionCasesMock,
   collectionDetailsMock,
   adminAccountsMock,
+  dashboardMock,
   defaultSessionMock,
   dailyStatsMock,
   userProfilesMock
@@ -63,6 +65,15 @@ export async function fetchCurrentSession(): Promise<LoginResponse> {
   } catch (error) {
     console.warn('fetchCurrentSession fallback', error);
     return defaultSessionMock;
+  }
+}
+
+export async function fetchDashboardOverview(): Promise<DashboardStats> {
+  try {
+    return await request<DashboardStats>('/admin/v1/dashboard');
+  } catch (error) {
+    console.warn('fetchDashboardOverview fallback', error);
+    return dashboardMock;
   }
 }
 
@@ -156,5 +167,17 @@ export async function fetchDailyStats(params: DailyStatsQuery): Promise<Paginate
       list: dailyStatsMock,
       total: dailyStatsMock.length
     };
+  }
+}
+
+export async function exportDailyStats(params: DailyStatsQuery): Promise<{ taskId: string }> {
+  try {
+    return await request<{ taskId: string }>('/admin/v1/reports/daily/export', {
+      method: 'POST',
+      body: JSON.stringify(params)
+    });
+  } catch (error) {
+    console.warn('exportDailyStats fallback', error);
+    return { taskId: `mock-export-${Date.now()}` };
   }
 }
