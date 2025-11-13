@@ -1,11 +1,11 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Optional
 
-from fastapi import Depends, FastAPI, Header, HTTPException, status
+from fastapi import FastAPI, Header, HTTPException, Query, Response, status
 
 from .database import init_db
-from .repository import upsert_attribution, query_funnel
-from .schemas import AttributionAccepted, AttributionIn, FunnelResponse, FunnelRow
+from .repository import query_funnel, upsert_attribution
+from .schemas import AttributionIn, FunnelResponse, FunnelRow
 
 app = FastAPI(title="channel-svc", version="0.1.0")
 
@@ -20,20 +20,31 @@ def healthcheck() -> dict:
     return {'status': 'ok'}
 
 
-@app.post('/channels/attributions', status_code=status.HTTP_202_ACCEPTED, response_model=AttributionAccepted)
-def ingest_attribution(payload: AttributionIn, x_idempotency_key: Optional[str] = Header(default=None)) -> AttributionAccepted:
+@app.post('/channels/attributions', status_code=status.HTTP_204_NO_CONTENT)
+def ingest_attribution(
+    payload: AttributionIn,
+    x_idempotency_key: Optional[str] = Header(default=None, alias='X-Idempotency-Key')
+) -> Response:
     try:
         upsert_attribution(payload)
-        return AttributionAccepted(installId=payload.installId, event=payload.event)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as exc:  # pragma: no cover
-        raise HTTPException(status_code=500, detail=str(exc))
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @app.get('/channels/funnel', response_model=FunnelResponse)
-def get_funnel(startDate: Optional[datetime] = None, endDate: Optional[datetime] = None, channel: Optional[str] = 'all') -> FunnelResponse:
-    start = startDate or datetime.utcnow() - timedelta(days=7)
-    end = endDate or datetime.utcnow()
-    rows = query_funnel(start, end, channel)
+def get_funnel(
+    startDate: Optional[date] = Query(default=None, description='起始日期（默认近 7 天）'),
+    endDate: Optional[date] = Query(default=None, description='结束日期（默认今天）'),
+    channel: Optional[str] = Query(default='all', description='渠道标识，默认 all'),
+) -> FunnelResponse:
+    today = datetime.utcnow().date()
+    start_day = startDate or (today - timedelta(days=6))
+    end_day = endDate or today
+    start_dt = datetime.combine(start_day, datetime.min.time())
+    end_dt = datetime.combine(end_day, datetime.max.time())
+
+    rows = query_funnel(start_dt, end_dt, channel)
     items = [
         FunnelRow(
             date=row['stat_date'],

@@ -1,26 +1,31 @@
-from datetime import datetime, date
-from typing import Literal, Optional, List
+from datetime import date, datetime
+from decimal import Decimal
+from typing import List, Literal, Optional
+
 from pydantic import BaseModel, Field
 
 EventType = Literal['install', 'register', 'apply', 'disburse']
 
 
 class AttributionIn(BaseModel):
-    installId: str = Field(..., alias='installId', min_length=3)
-    channel: str
+    installId: str = Field(..., min_length=3)
+    channel: str = Field(..., min_length=2)
     event: EventType
     campaign: Optional[str] = None
-    cost: float = 0
+    cost: Decimal = Field(default=Decimal('0'))
     occurredAt: datetime
 
     class Config:
-        populate_by_name = True
-
-
-class AttributionAccepted(BaseModel):
-    installId: str
-    event: EventType
-    acceptedAt: datetime = Field(default_factory=datetime.utcnow)
+        json_schema_extra = {
+            'example': {
+                'installId': 'install-001',
+                'channel': 'facebook',
+                'campaign': 'FB-Q4',
+                'event': 'install',
+                'cost': '1.2',
+                'occurredAt': '2025-11-12T09:00:00Z'
+            }
+        }
 
 
 class FunnelRow(BaseModel):

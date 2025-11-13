@@ -1,17 +1,30 @@
-### Ingest Attribution
+### Install Attribution
 POST http://localhost:8011/channels/attributions
 Content-Type: application/json
-Accept: application/json
 
 {
   "installId": "install-001",
   "channel": "facebook",
+  "campaign": "FB-Q4",
   "event": "install",
-  "occurredAt": "2025-01-01T10:00:00Z"
+  "cost": "1.20",
+  "occurredAt": "2025-11-12T09:20:00Z"
 }
 
-### Funnel
-GET http://localhost:8011/channels/funnel?date=2025-01-01
+### Register Attribution
+POST http://localhost:8011/channels/attributions
 Content-Type: application/json
-Accept: application/json
 
+{
+  "installId": "install-001",
+  "channel": "facebook",
+  "campaign": "FB-Q4",
+  "event": "register",
+  "occurredAt": "2025-11-12T09:45:00Z"
+}
+
+### Funnel (默认最近 7 天)
+GET http://localhost:8011/channels/funnel
+
+### Funnel（指定日期 + 渠道）
+GET http://localhost:8011/channels/funnel?startDate=2025-11-10&endDate=2025-11-12&channel=facebook

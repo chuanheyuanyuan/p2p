@@ -1,5 +1,5 @@
-from datetime import datetime
-from typing import Iterable, List
+from datetime import datetime, timezone
+from typing import List, Optional
 
 from .database import get_conn
 from .schemas import AttributionIn
@@ -12,16 +12,27 @@ def upsert_attribution(payload: AttributionIn) -> None:
         "ON CONFLICT(install_id, event) DO UPDATE SET "
         "channel=excluded.channel, campaign=excluded.campaign, cost=excluded.cost, occurred_at=excluded.occurred_at"
     )
+    occurred_at = payload.occurredAt
+    if occurred_at.tzinfo:
+        occurred_at = occurred_at.astimezone(timezone.utc)
+    occurred_value = occurred_at.replace(microsecond=0, tzinfo=None).isoformat()
     with get_conn() as conn:
         conn.execute(
             sql,
-            (payload.installId, payload.channel, payload.campaign, payload.event, payload.cost, payload.occurredAt.isoformat()),
+            (
+                payload.installId,
+                payload.channel,
+                payload.campaign,
+                payload.event,
+                float(payload.cost),
+                occurred_value,
+            ),
         )
 
 
-def query_funnel(start: datetime, end: datetime, channel: str | None = None) -> List[dict]:
+def query_funnel(start: datetime, end: datetime, channel: Optional[str] = None) -> List[dict]:
     conditions = ["occurred_at BETWEEN ? AND ?"]
-    params: List = [start.isoformat(), end.isoformat()]
+    params: List[str] = [start.isoformat(), end.isoformat()]
     if channel and channel.lower() != 'all':
         conditions.append("channel = ?")
         params.append(channel)

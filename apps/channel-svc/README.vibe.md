@@ -3,23 +3,26 @@
 > Domain: 渠道投放与归因
 
 ## ⚡ Quickstart
-1. `task run:channel-svc` — 启动本服务（若 `app/main.py` 尚未创建会给出提示）。
-2. `task lint` / `task test` — 统一代码质量与测试（基于 ruff + pytest）。
-3. 使用 VS Code REST Client 打开 `sample.http`，即可在 vibe coding 中快速回放接口。
+1. `cd services/channel-svc && python3 -m venv .venv && source .venv/bin/activate`
+2. `pip install -r requirements.txt`
+3. `uvicorn app.main:app --reload --port 8011`
 
-## 🔌 API 快速体验
-- 默认本地地址：`http://localhost:8011`
-- 推荐带上 `X-Request-Id` 方便链路追踪。
-- 事件钩子：CHANNEL_ATTRIBUTED, CHANNEL_FUNNEL_READY。
+## 🔌 API
+- `POST /channels/attributions`
+  - Body: `installId/channel/campaign/event/cost/occurredAt`
+  - 幂等：`installId + event`，成功返回 204。
+- `GET /channels/funnel?startDate=2025-11-10&endDate=2025-11-12&channel=facebook`
+  - 返回安装→注册→申请→放款 + spend，默认最近 7 天、`channel=all`。
+- 健康检查：`GET /healthz`
 
-## 🧰 文件约定
-- `app/` 目录放 FastAPI 入口、路由与依赖。
-- `domain/` 目录放 Pydantic/SQLModel 聚合（待创建）。
-- `README.vibe.md` + `sample.http` 永远同步更新，供 vibe/LLM 获取上下文。
+## 🧪 Testing
+```bash
+cd services/channel-svc
+source .venv/bin/activate
+pytest
+```
 
-## 👀 观测 & 调试
-- 健康检查：`GET /healthz`（所有服务需实现）。
-- 指标：`/metrics` 暴露 Prometheus 采集结果。
-- 日志：建议使用 `structlog` 并包含 `trace_id`、`span_id`、`principal` 字段。
-
-> TODO: 在实现阶段记得更新本文件，确保步骤与端点和代码保持一致。
+## 👀 调试提示
+- `CHANNEL_DB_PATH` 环境变量可切换 SQLite 路径，方便多实例测试。
+- `apps/channel-svc/sample.http` 提供完整上报/漏斗查询示例。
+- 日志中 `event=CHANNEL_ATTRIBUTION_RECORDED` / `CHANNEL_FUNNEL_QUERY` 便于追踪链路。
