@@ -1,7 +1,9 @@
-import { Breadcrumb, Space, Tag, Typography } from 'antd';
+import { App as AntdApp, Breadcrumb, Dropdown, Space, Tag, Typography } from 'antd';
 import { useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { navKeyMap } from '../constants/navigation';
+import { roleLabels } from '../constants/roles';
+import { selectCurrentUser, selectRoles, useAuthStore } from '../store/auth';
 
 const breadcrumbPatterns: Array<{ pattern: RegExp; trail: string[] }> = [
   { pattern: /^\/$/, trail: ['首页'] },
@@ -19,6 +21,11 @@ const breadcrumbPatterns: Array<{ pattern: RegExp; trail: string[] }> = [
 
 const Topbar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { message } = AntdApp.useApp();
+  const user = useAuthStore(selectCurrentUser);
+  const roles = useAuthStore(selectRoles);
+  const logout = useAuthStore((state) => state.logout);
 
   const current = useMemo(() => {
     const path = location.pathname.replace(/\/$/, '') || '/';
@@ -31,13 +38,51 @@ const Topbar = () => {
     .filter(Boolean)
     .map((title, index) => ({ key: `${title}-${index}`, title }));
 
+  const initials = user?.name
+    ?.split(' ')
+    .map((part) => part.charAt(0))
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() ?? 'OP';
+
+  const menuItems = [
+    {
+      key: 'role',
+      label: (
+        <div>
+          <div style={{ fontWeight: 600 }}>{user?.name ?? '未登录'}</div>
+          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+            {user?.email ?? 'no-reply@inscash.com'}
+          </Typography.Text>
+        </div>
+      ),
+      disabled: true
+    },
+    { type: 'divider' as const },
+    { key: 'logout', label: '退出登录' }
+  ];
+
+  const handleMenuClick = ({ key }: { key: string }) => {
+    if (key === 'logout') {
+      logout();
+      message.success('已退出登录');
+      navigate('/login');
+    }
+  };
+
+  const roleText = roles.map((role) => roleLabels[role]).join(' / ') || '未分配角色';
+
   return (
     <div className="topbar">
       <Breadcrumb items={breadcrumbItems} />
       <Space size="large" align="center">
-        <Typography.Text type="secondary">LT: 2025/10/20 08:13:52</Typography.Text>
+        <Typography.Text type="secondary">{roleText}</Typography.Text>
         <Tag color="green">在线</Tag>
-        <div className="avatar">OP</div>
+        <Dropdown menu={{ items: menuItems, onClick: handleMenuClick }}>
+          <div className="avatar" role="button" aria-label="account menu">
+            {initials}
+          </div>
+        </Dropdown>
       </Space>
     </div>
   );

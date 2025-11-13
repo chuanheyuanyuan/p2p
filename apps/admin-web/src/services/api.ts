@@ -12,9 +12,12 @@ import {
   applicationDetailsMock,
   collectionCasesMock,
   collectionDetailsMock,
+  adminAccountsMock,
+  defaultSessionMock,
   dailyStatsMock,
   userProfilesMock
 } from '../mocks/data';
+import type { LoginPayload, LoginResponse } from '../types/auth';
 
 interface PaginatedResponse<T> {
   list: T[];
@@ -27,6 +30,40 @@ export interface ApplicationQuery {
   keyword?: string;
   product?: string;
   level?: string;
+}
+
+export async function adminLogin(payload: LoginPayload): Promise<LoginResponse> {
+  try {
+    return await request<LoginResponse>('/admin/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  } catch (error) {
+    console.warn('adminLogin fallback to mock', error);
+    const matched = adminAccountsMock.find(
+      (account) => account.username === payload.username || account.email === payload.username
+    );
+    if (!matched || matched.password !== payload.password) {
+      throw new Error('账号或密码错误');
+    }
+    return {
+      accessToken: `mock-token-${matched.id}`,
+      refreshToken: `mock-refresh-${matched.id}`,
+      expiresIn: 3600,
+      user: { id: matched.id, name: matched.name, email: matched.email, title: matched.title },
+      roles: matched.roles,
+      permissions: matched.permissions
+    };
+  }
+}
+
+export async function fetchCurrentSession(): Promise<LoginResponse> {
+  try {
+    return await request<LoginResponse>('/admin/v1/auth/me');
+  } catch (error) {
+    console.warn('fetchCurrentSession fallback', error);
+    return defaultSessionMock;
+  }
 }
 
 export async function fetchApplications(params: ApplicationQuery): Promise<PaginatedResponse<ApplicationRecord>> {

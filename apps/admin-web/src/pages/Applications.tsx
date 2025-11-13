@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useRequest } from 'ahooks';
 import { Button, Card, Form, Input, Select, Space, Table, Tag, type TableColumnsType } from 'antd';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { ApplicationRecord } from '../mocks/data';
 import { fetchApplications, type ApplicationQuery } from '../services/api';
 
@@ -12,8 +12,11 @@ const Applications = () => {
   const navigate = useNavigate();
   const [query, setQuery] = useState<ApplicationQuery>({ page: 1, pageSize: PAGE_SIZE });
 
-  const { data, loading } = useRequest(() => fetchApplications(query), {
-    refreshDeps: [query]
+  const { data, isFetching } = useQuery({
+    queryKey: ['applications', query],
+    queryFn: () => fetchApplications(query),
+    placeholderData: keepPreviousData,
+    staleTime: 30 * 1000
   });
 
   const handleSearch = () => {
@@ -103,7 +106,7 @@ const Applications = () => {
           rowKey="id"
           columns={columns}
           dataSource={data?.list ?? []}
-          loading={loading}
+          loading={isFetching}
           pagination={{
             current: query.page,
             pageSize: query.pageSize,

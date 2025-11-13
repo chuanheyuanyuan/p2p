@@ -20,8 +20,8 @@ import {
   type TableColumnsType
 } from 'antd';
 import dayjs from 'dayjs';
-import { useState, useEffect } from 'react';
-import { useRequest } from 'ahooks';
+import { useState } from 'react';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CollectionCase, CollectionCaseDetail } from '../mocks/data';
 import {
   fetchCollectionCases,
@@ -35,66 +35,69 @@ const Collections = () => {
   const [filters, setFilters] = useState<CollectionsQuery>({ page: 1, pageSize: PAGE_SIZE });
   const [selectedCase, setSelectedCase] = useState<CollectionCase | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
-  const [detailState, setDetailState] = useState<CollectionCaseDetail | null>(null);
-
-  const listReq = useRequest(() => fetchCollectionCases(filters), {
-    refreshDeps: [filters]
+  const queryClient = useQueryClient();
+  const listQuery = useQuery({
+    queryKey: ['collection-cases', filters],
+    queryFn: () => fetchCollectionCases(filters),
+    placeholderData: keepPreviousData,
+    staleTime: 30 * 1000
   });
 
-  const detailReq = useRequest<CollectionCaseDetail, [string]>((caseId: string) => fetchCollectionDetail(caseId), {
-    manual: true,
-    onSuccess: (data) => setDetailState(data)
+  const detailQuery = useQuery({
+    queryKey: ['collection-case-detail', selectedCase?.caseId],
+    queryFn: () => fetchCollectionDetail(selectedCase?.caseId as string),
+    enabled: Boolean(selectedCase?.caseId)
   });
-
-  useEffect(() => {
-    if (!selectedCase) {
-      setDetailState(null);
-    }
-  }, [selectedCase]);
+  const detailLoading = Boolean(selectedCase) && (detailQuery.isPending || detailQuery.isFetching);
 
   const handleOpenDrawer = (record: CollectionCase, tabKey: string) => {
     setSelectedCase(record);
     setActiveTab(tabKey);
-    detailReq.run(record.caseId);
-  };
-
-  const handleCloseDrawer = () => {
-    setSelectedCase(null);
   };
 
   const handleAddFollowUp = (values: { action: string; result: string }) => {
-    if (!detailState) return;
-    setDetailState({
-      ...detailState,
-      followUps: [
-        {
-          ts: dayjs().format('YYYY-MM-DD HH:mm'),
-          actor: 'Sitsofe',
-          action: values.action,
-          result: values.result
-        },
-        ...detailState.followUps
-      ]
+    if (!selectedCase) return;
+    queryClient.setQueryData(['collection-case-detail', selectedCase.caseId], (prev?: CollectionCaseDetail) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        followUps: [
+          {
+            ts: dayjs().format('YYYY-MM-DD HH:mm'),
+            actor: 'Sitsofe',
+            action: values.action,
+            result: values.result
+          },
+          ...prev.followUps
+        ]
+      };
     });
     message.success('已记录跟进（本地模拟）');
   };
 
   const handleAddPTP = (values: { amount: number; promiseDate: dayjs.Dayjs; note?: string }) => {
-    if (!detailState) return;
-    setDetailState({
-      ...detailState,
-      ptpRecords: [
-        {
-          ts: dayjs().format('YYYY-MM-DD HH:mm'),
-          amount: values.amount,
-          promiseDate: values.promiseDate.format('YYYY-MM-DD'),
-          status: '有效',
-          note: values.note
-        },
-        ...detailState.ptpRecords
-      ]
+    if (!selectedCase) return;
+    queryClient.setQueryData(['collection-case-detail', selectedCase.caseId], (prev?: CollectionCaseDetail) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        ptpRecords: [
+          {
+            ts: dayjs().format('YYYY-MM-DD HH:mm'),
+            amount: values.amount,
+            promiseDate: values.promiseDate.format('YYYY-MM-DD'),
+            status: '有效',
+            note: values.note
+          },
+          ...prev.ptpRecords
+        ]
+      };
     });
     message.success('PTP 已创建（本地模拟）');
+  };
+
+  const handleCloseDrawer = () => {
+    setSelectedCase(null);
   };
 
   const columns: TableColumnsType<CollectionCase> = [
@@ -129,7 +132,7 @@ const Collections = () => {
     }
   ];
 
-  const detail = detailState;
+  const detail = detailQuery.data ?? null;
 
   return (
     <>
@@ -164,12 +167,12 @@ const Collections = () => {
           <Table<CollectionCase>
             rowKey="caseId"
             columns={columns}
-            dataSource={listReq.data?.list ?? []}
-            loading={listReq.loading}
+            dataSource={listQuery.data?.list ?? []}
+            loading={listQuery.isFetching}
             pagination={{
               current: filters.page,
               pageSize: filters.pageSize,
-              total: listReq.data?.total
+              total: listQuery.data?.total
             }}
             onChange={(pagination) =>
               setFilters((prev) => ({
@@ -189,7 +192,7 @@ const Collections = () => {
         open={!!selectedCase}
         onClose={handleCloseDrawer}
       >
-        {detailReq.loading ? (
+        {detailLoading ? (
           <Spin />
         ) : detail ? (
           <Tabs

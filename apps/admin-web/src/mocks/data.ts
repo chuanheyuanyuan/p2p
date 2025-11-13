@@ -181,6 +181,17 @@ export interface UserProfile {
   blacklisted: boolean;
 }
 
+export interface AdminAccount {
+  id: string;
+  username: string;
+  password: string;
+  name: string;
+  email: string;
+  roles: AdminRole[];
+  permissions: string[];
+  title?: string;
+}
+
 export const dashboardKpis: DashboardKpi[] = [
   { label: '今日放款金额', value: '₵93,800', delta: '+12.6% vs 昨日' },
   { label: '今日申请笔数', value: '27', delta: '首逾率 38.19%' },
@@ -195,6 +206,53 @@ export const dailyStatsMock: DailyStat[] = [
   { date: '2025-10-17', installs: 256, regs: 11, logins: 12, applies: 197, disburses: 117, repayments: 117, amount: 45500 },
   { date: '2025-10-16', installs: 226, regs: 6, logins: 9, applies: 187, disburses: 121, repayments: 121, amount: 48090 }
 ];
+
+export const adminAccountsMock: AdminAccount[] = [
+  {
+    id: 'staff-ops-01',
+    username: 'ops.lead',
+    password: 'admin123',
+    name: 'Ama Boateng',
+    email: 'ops.lead@inscash.com',
+    roles: ['super_admin', 'ops_manager', 'analyst', 'channel_ops'],
+    permissions: ['applications:read', 'ops:write', 'reports:view', 'channel:manage'],
+    title: '运营负责人'
+  },
+  {
+    id: 'staff-collector-07',
+    username: 'collector.jr',
+    password: 'collector123',
+    name: 'Yaw Mensah',
+    email: 'collector.jr@inscash.com',
+    roles: ['collector_agent'],
+    permissions: ['collections:workbench'],
+    title: 'D1 坐席'
+  },
+  {
+    id: 'staff-analyst-03',
+    username: 'analyst',
+    password: 'analyst123',
+    name: 'Efua Owusu',
+    email: 'analyst@inscash.com',
+    roles: ['analyst'],
+    permissions: ['reports:view'],
+    title: '数据分析师'
+  }
+];
+
+export const defaultSessionMock: LoginResponse = {
+  accessToken: 'mock-admin-token',
+  refreshToken: 'mock-refresh-token',
+  expiresIn: 3600,
+  user: {
+    id: 'staff-ops-01',
+    name: 'Ama Boateng',
+    email: 'ops.lead@inscash.com',
+    title: '运营负责人'
+  },
+  roles: ['super_admin', 'ops_manager', 'analyst', 'channel_ops'],
+  permissions: ['applications:read', 'ops:write', 'reports:view', 'channel:manage']
+};
 
 export const applicationsMock: ApplicationRecord[] = [
   { id: '397709', userId: 'U10001', product: 'InsCash Plus', name: 'Chiamaka Eddy-okafor', channel: 'Google Ads', level: 'Level5', amount: 150, term: '7D', reviewer: 'OCR 编辑', status: '通过' },
@@ -447,3 +505,5 @@ export const userProfilesMock: Record<string, UserProfile> = {
     blacklisted: false
   }
 };
+import type { AdminRole } from '../constants/roles';
+import type { LoginResponse } from '../types/auth';

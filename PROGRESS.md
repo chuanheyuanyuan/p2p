@@ -65,6 +65,12 @@
   - 模块化 `template_engine` + `channel_client`，输出 `NOTIFY_ENQUEUED/NOTIFY_SENT/NOTIFY_FAILED/CHANNEL_DISPATCHED` 事件，供后续串联 loan/payment/collection。
   - TODO：接入真实通道、补充模板 CRUD、增加调度/重试与告警。
 
+### admin-web（T19 · M1 登录 & RBAC）
+- 技术栈调整为 React Query + Zustand：所有列表/详情数据改用 React Query，`src/services/http.ts` 自动注入 `Authorization`，mock 兜底仍在 `services/api.ts`。
+- 新增 `/login` 页面与 `RequireAuth/RoleGuard`：登录成功后写入 Zustand（含 token/roles/permissions），菜单与路由按 `navSections.roles` 自动过滤，403 页面提示角色不足。
+- `Sidebar` RBAC 过滤已写 Vitest+RTL 单测（`npm run test`），默认 mock 账号包括 `ops.lead`、`collector.jr`、`analyst`，方便验证不同视角。
+- 文档更新：`apps/admin-web/README.md`/`README.vibe.md` 说明登录流程与角色；`apps/bff-admin/sample.http` 增加 `/admin/v1/auth/login`/`/auth/me` 示例，便于后端联调。
+
 ## 运行提示与偏好
 - 所有服务都需在对应目录下 `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`。
 - Python 3.9 不支持 `| None`，请使用 `Optional[...]` 并导入 `typing.Optional`。

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Button, Card, DatePicker, Form, Select, Space, Statistic, Table, type TableColumnsType } from 'antd';
-import { useRequest } from 'ahooks';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import type { DailyStat } from '../mocks/data';
 import { fetchDailyStats, type DailyStatsQuery } from '../services/api';
@@ -18,8 +18,11 @@ const DailyStats = () => {
     pageSize: 10
   });
 
-  const { data, loading } = useRequest(() => fetchDailyStats(query), {
-    refreshDeps: [query]
+  const { data, isFetching } = useQuery({
+    queryKey: ['daily-stats', query],
+    queryFn: () => fetchDailyStats(query),
+    placeholderData: keepPreviousData,
+    staleTime: 60 * 1000
   });
 
   const list = data?.list ?? [];
@@ -113,7 +116,7 @@ const DailyStats = () => {
           rowKey="date"
           columns={columns}
           dataSource={list}
-          loading={loading}
+          loading={isFetching}
           pagination={{
             current: query.page,
             pageSize: query.pageSize,

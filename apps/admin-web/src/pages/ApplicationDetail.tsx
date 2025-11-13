@@ -1,6 +1,6 @@
 import { Alert, Card, Col, Descriptions, Empty, Row, Spin, Tabs, Timeline, Typography } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useRequest } from 'ahooks';
+import { useQuery } from '@tanstack/react-query';
 import type { ApplicationDetail as ApplicationDetailType, ApprovalNode, ApplicationHistoryEntry } from '../mocks/data';
 import { fetchApplicationById } from '../services/api';
 
@@ -8,11 +8,13 @@ const ApplicationDetail = () => {
   const { id = '' } = useParams();
   const navigate = useNavigate();
 
-  const { data, loading, error } = useRequest<ApplicationDetailType | undefined, []>(() => fetchApplicationById(id), {
-    ready: Boolean(id)
+  const { data, isPending, error } = useQuery({
+    queryKey: ['application-detail', id],
+    queryFn: () => fetchApplicationById(id),
+    enabled: Boolean(id)
   });
 
-  if (loading) {
+  if (isPending) {
     return (
       <div style={{ textAlign: 'center', padding: '48px 0' }}>
         <Spin />

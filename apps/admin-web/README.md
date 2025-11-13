@@ -1,6 +1,6 @@
 # InsCash Admin Web
 
-React + Ant Design 管理后台原型，支持“首页、数据大盘、申请管理、申请详情、用户档案、催收工作台、运营配置、App 升级”等核心视图，并内置 API 封装，可在无真实后端时 fallback 到 mock 数据。
+React + Ant Design 管理后台原型，支持“首页、数据大盘、申请管理、申请详情、用户档案、催收工作台、运营配置、App 升级”等核心视图，并内置 API 封装，可在无真实后端时 fallback 到 mock 数据。最新版本已接入 React Query + Zustand 进行状态管理，并实现登录/RBAC 菜单控制。
 
 ## 快速开始
 
@@ -41,6 +41,26 @@ src/
 - 用户档案：身份信息、风控状态、标签/风险提示。
 - 催收工作台：案件列表、Drawer 工作台、PTP/外呼/跟进表单，支持本地记录。
 - Dashboard / Daily Stats / Ops Config / App 升级等基础页面。
+
+## 登录与权限
+
+- 访问 `/login` 输入账号密码完成登录，成功后自动落地到有权限的第一个菜单。
+- 菜单/路由按照角色（Admin、审批员、催收坐席、运营、渠道、数据分析等）自动过滤；无权限时跳转 403。
+- 默认体验账号（可在 mock 中扩展）：
+
+| 账号 (username/email) | 密码 | 角色 |
+| --- | --- | --- |
+| `ops.lead` / `ops.lead@inscash.com` | `admin123` | 超级管理员 + 运营/数据/渠道菜单 |
+| `collector.jr` | `collector123` | 催收坐席，仅可见催收菜单 |
+| `analyst` | `analyst123` | 数据分析，仅可见报表菜单 |
+
+## 测试
+
+使用 Vitest + RTL 校验关键组件（如 Sidebar 菜单过滤）：
+
+```bash
+npm run test
+```
 
 ## 下一步建议
 

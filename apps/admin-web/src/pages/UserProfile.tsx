@@ -1,17 +1,19 @@
 import { Alert, Card, Col, Descriptions, Empty, Row, Space, Spin, Tag, Typography } from 'antd';
 import { useParams } from 'react-router-dom';
-import { useRequest } from 'ahooks';
+import { useQuery } from '@tanstack/react-query';
 import type { UserProfile as UserProfileType } from '../mocks/data';
 import { fetchUserProfile } from '../services/api';
 
 const UserProfile = () => {
   const { userId = '' } = useParams();
 
-  const { data, loading, error } = useRequest<UserProfileType | undefined, []>(() => fetchUserProfile(userId), {
-    ready: Boolean(userId)
+  const { data, isPending, error } = useQuery({
+    queryKey: ['user-profile', userId],
+    queryFn: () => fetchUserProfile(userId),
+    enabled: Boolean(userId)
   });
 
-  if (loading) {
+  if (isPending) {
     return (
       <div style={{ textAlign: 'center', padding: '48px 0' }}>
         <Spin />

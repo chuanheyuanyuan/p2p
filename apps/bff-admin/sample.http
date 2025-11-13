@@ -1,3 +1,18 @@
+### Admin Login
+POST http://localhost:8002/admin/v1/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "username": "ops.lead",
+  "password": "admin123"
+}
+
+### Current Session
+GET http://localhost:8002/admin/v1/auth/me
+Accept: application/json
+Authorization: Bearer mock-admin-token
+
 ### List Pending Loans
 GET http://localhost:8002/admin/v1/loans?status=SUBMITTED
 Content-Type: application/json
