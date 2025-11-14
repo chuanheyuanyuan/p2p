@@ -1,3 +1,23 @@
+### List Applications
+GET http://localhost:8002/admin/v1/applications?status=APPROVED&page=1&pageSize=20
+Accept: application/json
+
+### Application Detail
+GET http://localhost:8002/admin/v1/applications/LN202510200001
+Accept: application/json
+
+### Export Applications
+POST http://localhost:8002/admin/v1/applications/export
+Content-Type: application/json
+Accept: application/json
+
+{
+  "startDate": "2025-10-16",
+  "endDate": "2025-10-20",
+  "status": "审核中",
+  "channel": "Google Ads"
+}
+
 ### Dashboard Overview
 GET http://localhost:8002/admin/v1/dashboard
 Accept: application/json

@@ -49,12 +49,20 @@ export interface ApplicationRecord {
   userId: string;
   product: string;
   name: string;
+  phone: string;
   channel: string;
   level: string;
   amount: number;
   term: string;
   reviewer: string;
-  status: '通过' | '拒绝';
+  status: '通过' | '拒绝' | '审核中' | '待签署';
+  statusCode?: string;
+  submittedAt: string;
+  appVersion: string;
+  tags?: string[];
+  repeat?: boolean;
+  riskScore?: number;
+  autoDecision?: string;
 }
 
 export interface ApprovalNode {
@@ -71,6 +79,13 @@ export interface ApplicationHistoryEntry {
   actor: string;
 }
 
+export interface ApplicationDocument {
+  type: string;
+  name: string;
+  url: string;
+  updatedAt: string;
+}
+
 export interface ApplicationDetail {
   application: ApplicationRecord;
   basic: {
@@ -79,11 +94,30 @@ export interface ApplicationDetail {
     deviceBrand: string;
     deviceModel: string;
     appVersion: string;
+    platform: string;
     source: string;
-    repeated: boolean;
+  };
+  customer: {
+    sim: string;
+    email: string;
+    gender: string;
+    age: number;
+    idType: string;
+    idNumber: string;
+    education: string;
+    maritalStatus: string;
+    address: string;
+    gps: string;
   };
   approval: ApprovalNode[];
+  approvalSummary: {
+    autoDecision: string;
+    manualDecision: string;
+    riskScore: number;
+    reasons: string[];
+  };
   history: ApplicationHistoryEntry[];
+  documents: ApplicationDocument[];
 }
 
 export interface CollectionCase {
@@ -313,9 +347,86 @@ export const defaultSessionMock: LoginResponse = {
 };
 
 export const applicationsMock: ApplicationRecord[] = [
-  { id: '397709', userId: 'U10001', product: 'InsCash Plus', name: 'Chiamaka Eddy-okafor', channel: 'Google Ads', level: 'Level5', amount: 150, term: '7D', reviewer: 'OCR 编辑', status: '通过' },
-  { id: '397708', userId: 'U10002', product: 'InsCash Max', name: 'Nancy A. Osei', channel: 'Facebook Ads', level: 'Level5', amount: 550, term: '7D', reviewer: 'OCR 编辑', status: '通过' },
-  { id: '397706', userId: 'U10003', product: 'InsCash Pro', name: 'Samuel Adu', channel: 'Facebook Ads', level: 'Level1', amount: 5000, term: '180D', reviewer: 'OCR 编辑', status: '拒绝' }
+  {
+    id: 'LN202510200001',
+    userId: 'U10001',
+    product: 'InsCash Plus',
+    name: 'Chiamaka Eddy-okafor',
+    phone: '+233-553-001-123',
+    channel: 'Google Ads',
+    level: 'Level5',
+    amount: 150,
+    term: '7D',
+    reviewer: 'Ama Owusu',
+    status: '通过',
+    statusCode: 'AUTO_PASS',
+    submittedAt: '2025-10-20 08:06:08',
+    appVersion: '1.0.17',
+    tags: ['复借', '高价值'],
+    repeat: true,
+    riskScore: 712,
+    autoDecision: 'AUTO_PASS'
+  },
+  {
+    id: 'LN202510190031',
+    userId: 'U10002',
+    product: 'InsCash Max',
+    name: 'Nancy A. Osei',
+    phone: '+233-553-000-175',
+    channel: 'Facebook Ads',
+    level: 'Level4',
+    amount: 550,
+    term: '14D',
+    reviewer: 'Kwame Boateng',
+    status: '审核中',
+    statusCode: 'MANUAL_PENDING',
+    submittedAt: '2025-10-19 22:14:09',
+    appVersion: '1.0.16',
+    tags: ['OCR 待复核'],
+    repeat: false,
+    riskScore: 655,
+    autoDecision: 'MANUAL_REVIEW'
+  },
+  {
+    id: 'LN202510180088',
+    userId: 'U10003',
+    product: 'InsCash Pro',
+    name: 'Samuel Adu',
+    phone: '+233-553-888-002',
+    channel: 'Affiliate',
+    level: 'Level2',
+    amount: 5000,
+    term: '180D',
+    reviewer: 'Efua Mensah',
+    status: '拒绝',
+    statusCode: 'RULE_DENY',
+    submittedAt: '2025-10-18 15:33:42',
+    appVersion: '1.0.15',
+    tags: ['新客'],
+    repeat: false,
+    riskScore: 488,
+    autoDecision: 'AUTO_REJECT'
+  },
+  {
+    id: 'LN202510200145',
+    userId: 'U10004',
+    product: 'InsCash Plus',
+    name: 'Yaw Mensah',
+    phone: '+233-553-777-201',
+    channel: 'Google Ads',
+    level: 'Level3',
+    amount: 320,
+    term: '21D',
+    reviewer: 'Ama Owusu',
+    status: '待签署',
+    statusCode: 'DOC_PENDING',
+    submittedAt: '2025-10-20 09:21:54',
+    appVersion: '1.0.17',
+    tags: ['合同待签'],
+    repeat: false,
+    riskScore: 690,
+    autoDecision: 'AUTO_PASS'
+  }
 ];
 
 export const collectionCasesMock: CollectionCase[] = [
@@ -486,31 +597,124 @@ export const releasesMock: ReleaseNote[] = [
   { version: 'v1.0.15', date: '2025-09-10', highlight: '上线新催收模板与语音策略。' }
 ];
 
+const customerProfiles: ApplicationDetail['customer'][] = [
+  {
+    sim: 'MTN-8821',
+    email: 'chiamaka@example.com',
+    gender: '女',
+    age: 32,
+    idType: 'National ID',
+    idNumber: 'GHA-718571472-2',
+    education: '大学',
+    maritalStatus: '未婚',
+    address: 'Accra, Ghana',
+    gps: '5.6037, -0.1870'
+  },
+  {
+    sim: 'Vodafone-0021',
+    email: 'nancy.osei@example.com',
+    gender: '女',
+    age: 35,
+    idType: 'Passport',
+    idNumber: 'P0021882',
+    education: '硕士',
+    maritalStatus: '已婚',
+    address: 'Ashanti Bantama BA 52',
+    gps: '6.6021, -1.6246'
+  },
+  {
+    sim: 'AirtelTigo-7710',
+    email: 'samuel.adu@example.com',
+    gender: '男',
+    age: 29,
+    idType: 'National ID',
+    idNumber: 'GHA-100200300',
+    education: '本科',
+    maritalStatus: '未婚',
+    address: 'Kumasi, Ghana',
+    gps: '6.6885, -1.6244'
+  },
+  {
+    sim: 'MTN-1117',
+    email: 'yaw.mensah@example.com',
+    gender: '男',
+    age: 31,
+    idType: 'Driver License',
+    idNumber: 'DL-9981',
+    education: '本科',
+    maritalStatus: '未婚',
+    address: 'Tema, Ghana',
+    gps: '5.669, -0.016'
+  }
+];
+
 export const applicationDetailsMock: Record<string, ApplicationDetail> = Object.fromEntries(
-  applicationsMock.map((application) => [
-    application.id,
-    {
-      application,
-      basic: {
-        applyTime: '2025-10-20 08:06:08',
-        productVersion: '2025Q4',
-        deviceBrand: 'Itel',
-        deviceModel: 'itel P671L',
-        appVersion: '1.0.17',
-        source: application.channel,
-        repeated: application.id === '397708'
-      },
-      approval: [
-        { node: '机审', result: application.status === '通过' ? '通过' : '拒绝', operator: '规则引擎', time: '2025-10-20 08:06:30' },
-        { node: '人工复核', result: application.status, operator: '审批员 A', remark: 'OCR 编辑', time: '2025-10-20 08:08:10' }
-      ],
-      history: [
-        { ts: '2025-10-19 21:10', event: '提交申请', actor: application.name },
-        { ts: '2025-10-20 08:06', event: '机审完成', actor: '风控系统' },
-        { ts: '2025-10-20 08:08', event: '人工审批', actor: '审批员 A' }
-      ]
-    }
-  ])
+  applicationsMock.map((application, index) => {
+    const customer = customerProfiles[index % customerProfiles.length];
+    const isApproved = application.status === '通过';
+    return [
+      application.id,
+      {
+        application,
+        basic: {
+          applyTime: application.submittedAt,
+          productVersion: '2025Q4',
+          deviceBrand: index % 2 === 0 ? 'Itel' : 'Samsung',
+          deviceModel: index % 2 === 0 ? 'itel P671L' : 'Galaxy A21',
+          appVersion: application.appVersion,
+          platform: 'Android',
+          source: application.channel
+        },
+        customer,
+        approval: [
+          {
+            node: '机审',
+            result: isApproved ? '通过' : application.status,
+            operator: '规则引擎',
+            time: `${application.submittedAt.split(' ')[0]} 08:06:30`
+          },
+          {
+            node: '人工复核',
+            result: application.status,
+            operator: application.reviewer,
+            remark: application.tags?.[0],
+            time: `${application.submittedAt.split(' ')[0]} 08:08:10`
+          }
+        ],
+        approvalSummary: {
+          autoDecision: application.autoDecision ?? 'AUTO_PASS',
+          manualDecision: application.status,
+          riskScore: application.riskScore ?? 650,
+          reasons: application.tags ?? ['规则命中：设备可信']
+        },
+        history: [
+          { ts: application.submittedAt, event: '提交申请', actor: application.name },
+          { ts: `${application.submittedAt.split(' ')[0]} 08:06`, event: '机审完成', actor: '风控系统' },
+          { ts: `${application.submittedAt.split(' ')[0]} 08:08`, event: '人工审批', actor: application.reviewer }
+        ],
+        documents: [
+          {
+            type: 'OCR',
+            name: '身份证（正面）',
+            url: 'https://example.com/docs/ocr-front.pdf',
+            updatedAt: `${application.submittedAt.split(' ')[0]} 07:58`
+          },
+          {
+            type: 'OCR',
+            name: '身份证（反面）',
+            url: 'https://example.com/docs/ocr-back.pdf',
+            updatedAt: `${application.submittedAt.split(' ')[0]} 07:59`
+          },
+          {
+            type: '合同',
+            name: '借款合同',
+            url: 'https://example.com/docs/contract.pdf',
+            updatedAt: `${application.submittedAt.split(' ')[0]} 08:10`
+          }
+        ]
+      }
+    ];
+  })
 );
 
 export const userProfilesMock: Record<string, UserProfile> = {

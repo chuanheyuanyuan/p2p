@@ -77,6 +77,12 @@
 - 新增 `exportDailyStats` Service、`dashboardMock` 数据结构及 `Dashboard` 组件加载态；补充 `apps/admin-web/src/utils/__tests__/dailyStats.test.ts` 单侧保障聚合逻辑。
 - 文档/sample 更新：`README.md`、`README.vibe.md` 说明 M2 功能；`apps/bff-admin/sample.http` 增加 dashboard/daily APIs 及导出示例；`整体开发计划.md` 标记 M2 进度。
 
+### admin-web（T19 · M3 申请列表 & 详情）
+- `Applications` 页面升级：React Query + Zustand 持久化筛选（手机号/贷款编号/时间/渠道/状态/App 版本/复借标记），导出按钮触发 `/admin/v1/applications/export`，列表新增状态色、App 版本、复借标签与金额格式化。
+- `ApplicationDetail` 拆为“贷款信息+客户画像+审批摘要+审批时间线+历史记录+凭证”多区块，展示命中原因、风险评分、文档下载、设备与客户字段（SIM、证件、GPS），并沿用 `maskPhone` 等工具函数。
+- 新增 `services/api.exportApplications`、`utils/format.ts`（mask/currency）及对应 Vitest，mock 数据同步扩展字段与 `applicationDetailsMock`。
+- 文档/示例同步：`README.md`、`README.vibe.md`、`apps/bff-admin/sample.http`、`临时文件`、`整体开发计划.md`，方便后续 BFF 对接。
+
 ## 运行提示与偏好
 - 所有服务都需在对应目录下 `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`。
 - Python 3.9 不支持 `| None`，请使用 `Optional[...]` 并导入 `typing.Optional`。

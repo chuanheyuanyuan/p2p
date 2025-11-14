@@ -23,6 +23,7 @@
 - 全局状态采用 Zustand（`src/store/auth.ts`），并提供 `select*` selector 便于组件订阅。
 - Mock 数据位于 `src/mocks/data.ts`，若无真实 BFF 会在 `services/api` 中自动 fallback。
 - Dashboard & Daily Stats（M2）已接入 `fetchDashboardOverview`、`fetchDailyStats`，支持错误提示、Skeleton、导出任务触发（`exportDailyStats`）。
+- Applications（M3）接入 `/admin/v1/applications/*`，提供筛选（Zustand 持久化）、导出任务（`exportApplications`），以及客户/审批摘要/历史/凭证多 Tab 详情。
 
 ## 🧪 Testing
 - `npm run test` —— Vitest + React Testing Library，当前覆盖 Sidebar RBAC 过滤（`src/components/__tests__/Sidebar.test.tsx`）。

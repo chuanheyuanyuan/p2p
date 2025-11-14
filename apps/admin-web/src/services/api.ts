@@ -29,9 +29,18 @@ interface PaginatedResponse<T> {
 export interface ApplicationQuery {
   page?: number;
   pageSize?: number;
+  loanId?: string;
   keyword?: string;
+  phone?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: string;
   product?: string;
   level?: string;
+  channel?: string;
+  appVersion?: string;
+  reviewer?: string;
+  repeat?: 'yes' | 'no';
 }
 
 export async function adminLogin(payload: LoginPayload): Promise<LoginResponse> {
@@ -167,6 +176,18 @@ export async function fetchDailyStats(params: DailyStatsQuery): Promise<Paginate
       list: dailyStatsMock,
       total: dailyStatsMock.length
     };
+  }
+}
+
+export async function exportApplications(params: ApplicationQuery): Promise<{ taskId: string }> {
+  try {
+    return await request<{ taskId: string }>('/admin/v1/applications/export', {
+      method: 'POST',
+      body: JSON.stringify(params)
+    });
+  } catch (error) {
+    console.warn('exportApplications fallback', error);
+    return { taskId: `mock-application-export-${Date.now()}` };
   }
 }
 
