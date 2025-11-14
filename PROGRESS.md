@@ -64,6 +64,12 @@
   - `GET /notifications/tasks/{taskId}`：查询任务详情、变量、渲染正文与错误信息。
   - 模块化 `template_engine` + `channel_client`，输出 `NOTIFY_ENQUEUED/NOTIFY_SENT/NOTIFY_FAILED/CHANNEL_DISPATCHED` 事件，供后续串联 loan/payment/collection。
   - TODO：接入真实通道、补充模板 CRUD、增加调度/重试与告警。
+- `ops-svc`（T16）为运营配置提供 CRUD + 审批服务：
+  - 目录：`services/ops-svc/`，端口 8021，主 DB `ops.db`（SQLite）。
+  - `POST/PUT/GET/DELETE /ops/products`：产品配置带版本号，更新触发审批链 + 审计记录。
+  - `POST /ops/grades`, `POST /ops/rules`：管理等级/策略，支持 `active` 字段与 `GET` 查询。
+  - `POST /ops/reload` + `GET /ops/audit`：热加载 + 审计流水，所有变更写日志（`ops_audit`）。
+  - 附带 README、sample.http、pytest 测试与 `scripts/verify_channel_api.py`（改名或新增适配 ops），便于运营/QA 验证。
 
 ### admin-web（T19 · M1 登录 & RBAC）
 - 技术栈调整为 React Query + Zustand：所有列表/详情数据改用 React Query，`src/services/http.ts` 自动注入 `Authorization`，mock 兜底仍在 `services/api.ts`。

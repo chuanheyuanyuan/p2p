@@ -1,0 +1,48 @@
+### Create Product
+POST http://localhost:8021/ops/products
+Content-Type: application/json
+X-Admin-Token: admin-token
+
+{
+  "productId": "P_BASIC",
+  "name": "基础运营产品",
+  "description": "默认配置",
+  "config": "{\"maxLoan\":\"5000\"}"
+}
+
+### Update Product
+PUT http://localhost:8021/ops/products/P_BASIC
+Content-Type: application/json
+X-Admin-Token: admin-token
+
+{
+  "config": "{\"maxLoan\":\"6000\"}"
+}
+
+### Create Grade
+POST http://localhost:8021/ops/grades
+Content-Type: application/json
+X-Admin-Token: admin-token
+
+{
+  "gradeId": "G_SILVER",
+  "label": "银级用户",
+  "criteria": "score > 600"
+}
+
+### Create Rule
+POST http://localhost:8021/ops/rules
+Content-Type: application/json
+X-Admin-Token: admin-token
+
+{
+  "ruleId": "R_APPROVE_AUTO",
+  "name": "自动审批",
+  "condition": "amount < 1000",
+  "action": "auto_approve",
+  "active": true
+}
+
+### Funnel (list audits)
+GET http://localhost:8021/ops/audit
+X-Admin-Token: admin-token
