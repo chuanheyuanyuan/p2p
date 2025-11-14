@@ -34,3 +34,14 @@
 
 
 请沿用上述约定继续交付，并在有新成果后更新 `PROGRESS.md`/`README`/`临时文件` 以便下一位工程师快速接手。***
+---
+
+## 交接补充
+当前 worktree `feature/T16` 已完成，已在 `/Users/weichuanzi/学习/p2p放贷系统` 的 `main` 上合并入主分支并跑通：
+- `services/ops-svc` 现在基于 FastAPI + SQLite，并使用 `ConfigDict` 配置、lifespan 初始化数据库、以 `model_dump_json` 替代 `.json()` 记录审计 payload。相关 README、sample.http、自动化脚本 `python services/ops-svc/scripts/verify_ops_api.py` 和 `tests/test_ops_api.py` 都已新增。
+- 生产环境模拟测试：`pytest services/ops-svc/tests/test_ops_api.py`（两条用例全部通过），并通过 `uvicorn app.main:app --port 8021` 启动服务后执行 `python services/ops-svc/scripts/verify_ops_api.py`，确认产品/grade/rule/reload/audit 工作流程正常（审计日志数 20 条）。
+- `.venv` 已在 `services/ops-svc/.venv` 里准备好（运行 `pip install -r services/ops-svc/requirements.txt`），可被后续任务继续复用。
+- `feature/T16` worktree已清理并删除本地分支，当前 `main` 领先远端两个提交，待同步 `git push`；远端没有 `feature/T16`，所以 `git push origin --delete feature/T16` 会失败，可忽略。
+
+## 补充提示词
+“ops-svc 服务已完整迁移到 FastAPI/Pydantic 2 的写法，已经通过 `pytest services/ops-svc/tests/test_ops_api.py`、`uvicorn app.main:app --port 8021` + `python services/ops-svc/scripts/verify_ops_api.py` 两种自动化验证。若下一个任务需要扩展 ops 支持，请在当前 `main` 上新建 feature 分支，确保 `.venv` 依旧在 `services/ops-svc/.venv` 并先跑一遍 `uvicorn` 与 `verify_ops_api.py`；操作完再更新 `PROGRESS.md`/`临时文件` 记录测试步骤，最后按约定清理 worktree 并告知下一位接手者。”***
