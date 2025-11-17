@@ -10,6 +10,7 @@ import OpsConfig from './pages/OpsConfig';
 import AppUpgrade from './pages/AppUpgrade';
 import ChannelManagement from './pages/ChannelManagement';
 import UserProfile from './pages/UserProfile';
+import Finance from './pages/Finance';
 import Login from './pages/Login';
 import Unauthorized from './pages/Unauthorized';
 import { RequireAuth, RoleGuard } from './components/RouteGuards';
@@ -97,6 +98,14 @@ const App = () => (
           element={
             <RoleGuard allowedRoles={routeRoleMap['/channel']}>
               <ChannelManagement />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="finance"
+          element={
+            <RoleGuard allowedRoles={routeRoleMap['/finance']}>
+              <Finance />
             </RoleGuard>
           }
         />

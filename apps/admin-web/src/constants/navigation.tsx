@@ -3,6 +3,7 @@ import {
   AppstoreOutlined,
   DashboardOutlined,
   DatabaseOutlined,
+  DollarCircleOutlined,
   FileTextOutlined,
   PartitionOutlined,
   SettingOutlined,
@@ -29,6 +30,7 @@ const analyticsRoles: AdminRole[] = ['super_admin', 'analyst', 'ops_manager'];
 const collectionsRoles: AdminRole[] = ['super_admin', 'collector_manager', 'collector_agent'];
 const opsRoles: AdminRole[] = ['super_admin', 'ops_manager'];
 const channelRoles: AdminRole[] = ['super_admin', 'channel_ops', 'ops_manager'];
+const financeRoles: AdminRole[] = ['super_admin', 'finance'];
 
 export const navSections: NavSection[] = [
   {
@@ -53,6 +55,10 @@ export const navSections: NavSection[] = [
       { key: '/app-upgrade', label: 'App 升级', icon: <AppstoreOutlined />, roles: opsRoles },
       { key: '/channel', label: '渠道管理', icon: <PartitionOutlined />, roles: channelRoles }
     ]
+  },
+  {
+    title: '财务',
+    items: [{ key: '/finance', label: '放还款对账', icon: <DollarCircleOutlined />, roles: financeRoles }]
   }
 ];
 
@@ -68,5 +74,6 @@ export const routeRoleMap: Record<string, AdminRole[]> = {
   '/case-detail': collectionsRoles,
   '/ops': opsRoles,
   '/app-upgrade': opsRoles,
-  '/channel': channelRoles
+  '/channel': channelRoles,
+  '/finance': financeRoles
 };

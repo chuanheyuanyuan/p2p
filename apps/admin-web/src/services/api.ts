@@ -6,6 +6,9 @@ import type {
   CollectionCaseDetail,
   DailyStat,
   DashboardStats,
+  FinanceDisbursement,
+  FinanceRepayment,
+  ReconciliationDiff,
   UserProfile
 } from '../mocks/data';
 import {
@@ -17,6 +20,9 @@ import {
   dashboardMock,
   defaultSessionMock,
   dailyStatsMock,
+  financeDisbursementsMock,
+  financeRepaymentsMock,
+  reconciliationDiffsMock,
   userProfilesMock
 } from '../mocks/data';
 import type { LoginPayload, LoginResponse } from '../types/auth';
@@ -163,6 +169,15 @@ export interface DailyStatsQuery {
   pageSize?: number;
 }
 
+export interface FinanceQuery {
+  status?: string;
+  channel?: string;
+  startDate?: string;
+  endDate?: string;
+  keyword?: string;
+  type?: string;
+}
+
 export async function fetchDailyStats(params: DailyStatsQuery): Promise<PaginatedResponse<DailyStat>> {
   try {
     const search = new URLSearchParams();
@@ -202,3 +217,119 @@ export async function exportDailyStats(params: DailyStatsQuery): Promise<{ taskI
     return { taskId: `mock-export-${Date.now()}` };
   }
 }
+
+export async function fetchFinanceDisbursements(
+  params: FinanceQuery
+): Promise<PaginatedResponse<FinanceDisbursement>> {
+  try {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) search.append(key, String(value));
+    });
+    return await request(`/admin/v1/finance/disbursements?${search.toString()}`);
+  } catch (error) {
+    console.warn('fetchFinanceDisbursements fallback', error);
+    const list = financeDisbursementsMock.filter((item) => {
+      if (params.status && item.status !== params.status) return false;
+      if (params.channel && item.channel !== params.channel) return false;
+      if (params.keyword) {
+        const keyword = params.keyword.toLowerCase();
+        if (!item.loanId.toLowerCase().includes(keyword) && !item.user.toLowerCase().includes(keyword)) {
+          return false;
+        }
+      }
+      if (!matchesDateRange(item.requestedAt, params.startDate, params.endDate)) return false;
+      return true;
+    });
+    return { list, total: list.length };
+  }
+}
+
+export async function retryFinanceDisbursement(disbursementId: string): Promise<{ success: boolean }> {
+  try {
+    return await request<{ success: boolean }>(`/admin/v1/finance/disbursements/${disbursementId}/retry`, {
+      method: 'POST'
+    });
+  } catch (error) {
+    console.warn(`retryFinanceDisbursement(${disbursementId}) fallback`, error);
+    if (!financeDisbursementsMock.find((item) => item.id === disbursementId)) {
+      throw new Error('未找到放款指令');
+    }
+    return { success: true };
+  }
+}
+
+export async function fetchFinanceRepayments(
+  params: FinanceQuery
+): Promise<PaginatedResponse<FinanceRepayment>> {
+  try {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) search.append(key, String(value));
+    });
+    return await request(`/admin/v1/finance/repayments?${search.toString()}`);
+  } catch (error) {
+    console.warn('fetchFinanceRepayments fallback', error);
+    const list = financeRepaymentsMock.filter((item) => {
+      if (params.status && item.status !== params.status) return false;
+      if (params.channel && item.channel !== params.channel) return false;
+      if (params.keyword) {
+        const keyword = params.keyword.toLowerCase();
+        if (!item.loanId.toLowerCase().includes(keyword) && !item.user.toLowerCase().includes(keyword)) {
+          return false;
+        }
+      }
+      if (!matchesDateRange(item.paidAt, params.startDate, params.endDate)) return false;
+      return true;
+    });
+    return { list, total: list.length };
+  }
+}
+
+export async function fetchReconciliationDiffs(
+  params: FinanceQuery
+): Promise<PaginatedResponse<ReconciliationDiff>> {
+  try {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) search.append(key, String(value));
+    });
+    return await request(`/admin/v1/finance/reconciliation?${search.toString()}`);
+  } catch (error) {
+    console.warn('fetchReconciliationDiffs fallback', error);
+    const list = reconciliationDiffsMock.filter((item) => {
+      if (params.status && item.status !== params.status) return false;
+      if (params.channel && item.channel !== params.channel) return false;
+      if (params.type && item.type !== params.type) return false;
+      if (!matchesDateRange(item.date, params.startDate, params.endDate)) return false;
+      return true;
+    });
+    return { list, total: list.length };
+  }
+}
+
+export async function exportReconciliation(params: FinanceQuery): Promise<{ taskId: string }> {
+  try {
+    return await request<{ taskId: string }>('/admin/v1/finance/reconciliation/export', {
+      method: 'POST',
+      body: JSON.stringify(params)
+    });
+  } catch (error) {
+    console.warn('exportReconciliation fallback', error);
+    return { taskId: `mock-finance-export-${Date.now()}` };
+  }
+}
+
+const matchesDateRange = (value: string, start?: string, end?: string) => {
+  if (!start && !end) return true;
+  const ts = new Date(value.replace(/-/g, '/')).getTime();
+  if (start) {
+    const startTs = new Date(`${start} 00:00`).getTime();
+    if (ts < startTs) return false;
+  }
+  if (end) {
+    const endTs = new Date(`${end} 23:59:59`).getTime();
+    if (ts > endTs) return false;
+  }
+  return true;
+};

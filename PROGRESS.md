@@ -89,6 +89,15 @@
 - 新增 `services/api.exportApplications`、`utils/format.ts`（mask/currency）及对应 Vitest，mock 数据同步扩展字段与 `applicationDetailsMock`。
 - 文档/示例同步：`README.md`、`README.vibe.md`、`apps/bff-admin/sample.http`、`临时文件`、`整体开发计划.md`，方便后续 BFF 对接。
 
+### admin-web（T19 · M4 借款人档案 & 审批四 Tab）
+- `applicationDetailsMock` / `userProfilesMock` 补齐 KYC、设备、隐私授权、渠道轨迹、历史借还等字段；ApplicationDetail 拆分 `BorrowerProfileTab/ApprovalTimelineTab/HistoryTab/DocumentsTab`，新增“借款人档案”视图并沿用 React Query Skeleton/错误处理。
+- `UserProfile` 页面升级为“概览/KYC/设备/借还”四 Tab，展示账号状态、授信额度、标签/风险提示与渠道轨迹，方便财务/催收联动；相关文档（README、README.vibe、整体开发计划、sample.http）同步描述。
+
+### admin-web（T19 · M5 财务放/还款对账）
+- 新增 `/finance` 路由与 Finance 页面，角色限定 `finance/super_admin`；页面包含“放款管理/还款管理/对账差异”三 Tab，使用 React Query + AntD Table 展示金额汇总、状态/渠道/日期/关键词筛选与放款失败一键重试。
+- `mocks/data.ts` 扩展 `FinanceDisbursement`/`FinanceRepayment`/`ReconciliationDiff` mock；`services/api.ts` 补充财务相关查询、导出、重试接口兜底逻辑，`apps/bff-admin/sample.http` 增加对应示例。
+- 文档更新：`README.md`、`README.vibe.md` 记录 M5 能力，`整体开发计划.md` 标记前端路线进度，`临时文件` 说明调试步骤。
+
 ## 运行提示与偏好
 - 所有服务都需在对应目录下 `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`。
 - Python 3.9 不支持 `| None`，请使用 `Optional[...]` 并导入 `typing.Optional`。
