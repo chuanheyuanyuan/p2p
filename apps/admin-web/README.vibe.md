@@ -15,7 +15,9 @@
 - 默认 mock 账号：
   - `ops.lead / admin123`：超级管理员，可访问全量菜单；
   - `collector.jr / collector123`：催收坐席，仅可访问催收菜单；
-  - `analyst / analyst123`：数据分析，仅可访问报表。
+  - `analyst / analyst123`：数据分析，仅可访问报表；
+  - `finance.lead / finance123`：财务放/还款与对账菜单；
+  - `super.admin / super123`：超级管理员（拥有所有菜单，可用于联调 Finance 模块）。
 
 ## 🧱 架构约定
 - 所有接口请求集中在 `src/services/api.ts`，统一经 `services/http.ts` 注入 `Authorization` header。

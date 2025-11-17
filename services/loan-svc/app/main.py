@@ -54,6 +54,21 @@ def get_products(productId: Optional[str] = Query(default=None)) -> ProductListR
     return ProductListResponse(items=items)
 
 
+@app.get('/loans', response_model=LoanListResponse)
+def list_loans(
+    status: Optional[str] = Query(default=None),
+    userId: Optional[str] = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    pageSize: int = Query(default=20, ge=1, le=100),
+) -> LoanListResponse:
+    limit = pageSize
+    offset = (page - 1) * pageSize
+    applications = list_applications(status=status, user_id=userId, limit=limit, offset=offset)
+    total = count_applications(status=status, user_id=userId)
+    items = [_loan_item_with_schedule(app_model) for app_model in applications]
+    return LoanListResponse(items=items, total=total, page=page, pageSize=pageSize)
+
+
 @app.post('/loans', response_model=LoanSubmitResponse, status_code=201)
 def create_loan(payload: LoanDraftRequest) -> LoanSubmitResponse:
     app_model = loan_service.create_draft(payload.userId, payload.productId, payload.amount, payload.termDays)
@@ -125,6 +140,28 @@ def get_schedule_view(loan_id: str = Path(...)) -> RepaymentScheduleResponse:
         lastPaidAt=schedule.last_paid_at,
         updatedAt=schedule.updated_at,
     )
+
+
+def _loan_item_with_schedule(app_model: LoanApplication) -> dict:
+    schedule = get_schedule(app_model.loan_id)
+    outstanding = schedule.outstanding_amount if schedule else 0
+    original = schedule.original_amount if schedule else 0
+    last_paid = schedule.last_paid_at if schedule else None
+    return {
+        'loanId': app_model.loan_id,
+        'userId': app_model.user_id,
+        'productId': app_model.product_id,
+        'amount': app_model.requested_amount,
+        'termDays': app_model.term_days,
+        'status': app_model.status,
+        'decision': app_model.decision_reason,
+        'score': app_model.score,
+        'createdAt': app_model.created_at,
+        'updatedAt': app_model.updated_at,
+        'outstandingAmount': outstanding,
+        'originalAmount': original,
+        'lastPaidAt': last_paid,
+    }
 
 
 @app.get('/users/{user_id}/loans', response_model=LoanListResponse)

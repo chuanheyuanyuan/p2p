@@ -1,0 +1,29 @@
+from __future__ import annotations
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from .config import get_settings
+from .routers import applications, auth, collections, reports, users
+
+settings = get_settings()
+app = FastAPI(title='bff-admin', version='0.1.0')
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.allow_origins,
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
+
+app.include_router(auth.router)
+app.include_router(applications.router)
+app.include_router(users.router)
+app.include_router(collections.router)
+app.include_router(reports.router)
+
+
+@app.get('/healthz')
+def healthz() -> dict:
+    return {'status': 'ok', 'service': settings.app_name}

@@ -329,6 +329,36 @@ export const adminAccountsMock: AdminAccount[] = [
     roles: ['analyst'],
     permissions: ['reports:view'],
     title: '数据分析师'
+  },
+  {
+    id: 'staff-finance-01',
+    username: 'finance.lead',
+    password: 'finance123',
+    name: 'Abena Owusu Afriyie',
+    email: 'finance.lead@inscash.com',
+    roles: ['finance'],
+    permissions: ['finance:read', 'finance:retry'],
+    title: '财务负责人'
+  },
+  {
+    id: 'staff-super-00',
+    username: 'super.admin',
+    password: 'super123',
+    name: 'Kwesi Mensah',
+    email: 'super.admin@inscash.com',
+    roles: [
+      'super_admin',
+      'loan_officer',
+      'risk_officer',
+      'finance',
+      'collector_manager',
+      'collector_agent',
+      'ops_manager',
+      'channel_ops',
+      'analyst'
+    ],
+    permissions: ['*'],
+    title: '超级管理员'
   }
 ];
 
@@ -342,8 +372,8 @@ export const defaultSessionMock: LoginResponse = {
     email: 'ops.lead@inscash.com',
     title: '运营负责人'
   },
-  roles: ['super_admin', 'ops_manager', 'analyst', 'channel_ops'],
-  permissions: ['applications:read', 'ops:write', 'reports:view', 'channel:manage']
+  roles: ['super_admin', 'finance', 'ops_manager', 'analyst', 'channel_ops'],
+  permissions: ['applications:read', 'ops:write', 'reports:view', 'channel:manage', 'finance:read']
 };
 
 export const applicationsMock: ApplicationRecord[] = [

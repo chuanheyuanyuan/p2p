@@ -67,7 +67,7 @@ tasks:
     desc: 启动 Admin BFF。
     cmds:
       - |
-        SERVICE_PATH="apps/bff-admin"
+        SERVICE_PATH="services/bff-admin"
         PORT=8002
         if [ -f "$SERVICE_PATH/app/main.py" ]; then
           (cd "$SERVICE_PATH" && {{.UV}} run uvicorn app.main:app --reload --port $PORT)

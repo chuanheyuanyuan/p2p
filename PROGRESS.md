@@ -70,6 +70,12 @@
   - `POST /ops/grades`, `POST /ops/rules`：管理等级/策略，支持 `active` 字段与 `GET` 查询。
   - `POST /ops/reload` + `GET /ops/audit`：热加载 + 审计流水，所有变更写日志（`ops_audit`）。
   - 附带 README、sample.http、pytest 测试与 `scripts/verify_channel_api.py`（改名或新增适配 ops），便于运营/QA 验证。
+- `bff-admin`（T18）补齐 Admin Web 聚合层：
+  - 目录：`services/bff-admin/`，端口 8002，默认直接读取 loan/payment/collection/user SQLite 并返回前端所需 JSON。
+  - `POST /admin/v1/auth/login` + `GET /admin/v1/auth/me`：内置账号签发 JWT，后续路由均校验 `Bearer`。
+  - `GET /admin/v1/applications`/`/{id}`/`/export`：输出申请列表、详情（含审批历史/文档）与导出任务号；`GET /admin/v1/users/{userId}` 聚合设备/KYC 档案。
+  - `GET /admin/v1/collections/cases`/`/{id}`：加载催收案件、行动、PTP 记录；`GET /admin/v1/dashboard`、`/reports/daily`、`POST /reports/daily/export` 提供运营看板与日报。
+  - README.vibe/sample.http 更新，新增 `pytest services/bff-admin/tests/test_bff_admin.py` 覆盖登录、申请、催收、报表串联流。
 
 ### admin-web（T19 · M1 登录 & RBAC）
 - 技术栈调整为 React Query + Zustand：所有列表/详情数据改用 React Query，`src/services/http.ts` 自动注入 `Authorization`，mock 兜底仍在 `services/api.ts`。

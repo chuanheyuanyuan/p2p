@@ -55,6 +55,8 @@ src/
 | `ops.lead` / `ops.lead@inscash.com` | `admin123` | 超级管理员 + 运营/数据/渠道菜单 |
 | `collector.jr` | `collector123` | 催收坐席，仅可见催收菜单 |
 | `analyst` | `analyst123` | 数据分析，仅可见报表菜单 |
+| `finance.lead` | `finance123` | 财务放/还款对账菜单 |
+| `super.admin` / `super.admin@inscash.com` | `super123` | 超级管理员（拥有所有菜单） |
 
 ## 测试
 

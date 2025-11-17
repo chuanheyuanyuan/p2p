@@ -83,6 +83,29 @@ class RepaymentScheduleResponse(BaseModel):
 
 class LoanListItem(BaseModel):
     loanId: str
+    userId: str
+    productId: str
+    amount: float
+    termDays: int
+    status: str
+    decision: Optional[str]
+    score: Optional[int]
+    createdAt: datetime
+    updatedAt: datetime
+    outstandingAmount: Decimal
+    originalAmount: Decimal
+    lastPaidAt: Optional[datetime]
+
+
+class LoanListResponse(BaseModel):
+    items: List[LoanListItem]
+    total: int
+    page: int
+    pageSize: int
+
+
+class LoanListItem(BaseModel):
+    loanId: str
     productId: str
     amount: float
     termDays: int

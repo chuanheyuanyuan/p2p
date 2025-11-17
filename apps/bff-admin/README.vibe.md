@@ -3,9 +3,9 @@
 > Domain: 后台运营聚合层
 
 ## ⚡ Quickstart
-1. `task run:bff-admin` — 启动本服务（若 `app/main.py` 尚未创建会给出提示）。
-2. `task lint` / `task test` — 统一代码质量与测试（基于 ruff + pytest）。
-3. 使用 VS Code REST Client 打开 `sample.http`，即可在 vibe coding 中快速回放接口。
+1. `cd services/bff-admin && uvicorn app.main:app --reload --port 8002` 启动服务（或运行 `pytest services/bff-admin/tests/test_bff_admin.py -q` 快速验证）。
+2. `pip install -r services/bff-admin/requirements.txt` 安装依赖；若使用 `task run:bff-admin` 请确保 `Taskfile` 指向 `services/bff-admin`。
+3. 使用 VS Code REST Client 打开 `apps/bff-admin/sample.http`，即可在 vibe coding 中快速回放接口。
 
 ## 🔌 API 快速体验
 - 默认本地地址：`http://localhost:8002`
