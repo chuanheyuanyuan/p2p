@@ -1,6 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 from uuid import uuid4
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -110,7 +111,7 @@ def list_disbs() -> list[dict]:
 
 
 @app.get('/payments/repayments')
-def list_repayment_records() -> list[dict]:
+def list_repayment_records(loanId: Optional[str] = None) -> list[dict]:
     return [
         {
             'repaymentId': r.repayment_id,
@@ -122,7 +123,7 @@ def list_repayment_records() -> list[dict]:
             'txnRef': r.txn_ref,
             'paidAt': r.paid_at.isoformat() + 'Z'
         }
-        for r in list_repayments()
+        for r in list_repayments(loanId)
     ]
 
 

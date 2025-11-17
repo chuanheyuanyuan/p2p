@@ -55,3 +55,69 @@ class RepaymentApplyResponse(BaseModel):
     currency: str
     status: str
     lastPaidAt: Optional[datetime]
+
+
+class LoanDetailResponse(BaseModel):
+    loanId: str
+    userId: str
+    productId: str
+    amount: float
+    termDays: int
+    status: str
+    decision: Optional[str]
+    score: Optional[int]
+    createdAt: datetime
+    updatedAt: datetime
+
+
+class RepaymentScheduleResponse(BaseModel):
+    loanId: str
+    currency: str
+    originalAmount: Decimal
+    outstandingAmount: Decimal
+    paidAmount: Decimal
+    status: str
+    lastPaidAt: Optional[datetime]
+    updatedAt: datetime
+
+
+class LoanListItem(BaseModel):
+    loanId: str
+    productId: str
+    amount: float
+    termDays: int
+    status: str
+    decision: Optional[str]
+    score: Optional[int]
+    createdAt: datetime
+    updatedAt: datetime
+    outstandingAmount: Decimal = Decimal('0')
+    originalAmount: Decimal = Decimal('0')
+    lastPaidAt: Optional[datetime] = None
+
+
+class LoanListResponse(BaseModel):
+    items: List[LoanListItem]
+
+class LoanDetailResponse(BaseModel):
+    loanId: str
+    userId: str
+    productId: str
+    amount: float
+    termDays: int
+    status: str
+    decision: Optional[str]
+    score: Optional[int]
+    createdAt: datetime
+    updatedAt: datetime
+
+
+class RepaymentScheduleResponse(BaseModel):
+    loanId: str
+    currency: str
+    originalAmount: Decimal
+    outstandingAmount: Decimal
+    paidAmount: Decimal
+    status: str
+    lastPaidAt: Optional[datetime]
+    updatedAt: datetime

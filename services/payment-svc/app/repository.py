@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Any, Optional
 
 from .database import get_connection
 from .models import Disbursement, Repayment
@@ -130,7 +130,13 @@ def get_repayment_by_txn(txn_ref: str) -> Optional[Repayment]:
     return _row_to_repayment(row)
 
 
-def list_repayments() -> list[Repayment]:
+def list_repayments(loan_id: Optional[str] = None) -> list[Repayment]:
+    query = 'SELECT * FROM repayments'
+    params: tuple[Any, ...] = ()
+    if loan_id:
+        query += ' WHERE loan_id = ?'
+        params = (loan_id,)
+    query += ' ORDER BY created_at DESC'
     with get_connection() as conn:
-        rows = conn.execute('SELECT * FROM repayments ORDER BY created_at DESC').fetchall()
+        rows = conn.execute(query, params).fetchall()
     return [_row_to_repayment(row) for row in rows]

@@ -21,6 +21,8 @@ uvicorn app.main:app --reload --port 8083
 - `POST /loans`：创建贷款草稿。
 - `POST /loans/{loanId}/submit`：提交申请并获得决策（调用 risk stub）。
 - `GET /loans/{loanId}/contracts`：生成合同快照（stub，返回本地文件路径）。
+- `GET /loans/{loanId}` / `/loans/{loanId}/schedule`：返回贷款详情和还款计划，供 BFF 账单视图使用。
+- `GET /users/{userId}/loans`：按用户列出贷款摘要（可带 `status`/`limit` 过滤），并附带还款计划余额。
 
 ## TODO
 1. 增加配置刷新接口（POST /loan/products/reload）。

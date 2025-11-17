@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from .database import get_connection
 from .models import LoanApplication
@@ -62,3 +62,38 @@ def get_application(loan_id: str) -> Optional[LoanApplication]:
         decision_reason=row['decision_reason'],
         score=row['score'],
     )
+
+
+def list_applications_by_user(user_id: str, limit: int = 20, status: Optional[str] = None) -> List[LoanApplication]:
+    query = '''
+        SELECT * FROM loan_applications
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+        LIMIT ?
+    '''
+    params: list = [user_id, limit]
+    if status:
+        query = '''
+            SELECT * FROM loan_applications
+            WHERE user_id = ? AND status = ?
+            ORDER BY created_at DESC
+            LIMIT ?
+        '''
+        params = [user_id, status, limit]
+    with get_connection() as conn:
+        rows = conn.execute(query, params).fetchall()
+    return [
+        LoanApplication(
+            loan_id=row['loan_id'],
+            user_id=row['user_id'],
+            product_id=row['product_id'],
+            requested_amount=row['requested_amount'],
+            term_days=row['term_days'],
+            status=row['status'],
+            created_at=datetime.fromisoformat(row['created_at']),
+            updated_at=datetime.fromisoformat(row['updated_at']),
+            decision_reason=row['decision_reason'],
+            score=row['score'],
+        )
+        for row in rows
+    ]
