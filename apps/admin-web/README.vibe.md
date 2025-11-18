@@ -26,6 +26,8 @@
 - Mock 数据位于 `src/mocks/data.ts`，若无真实 BFF 会在 `services/api` 中自动 fallback。
 - Dashboard & Daily Stats（M2）已接入 `fetchDashboardOverview`、`fetchDailyStats`，支持错误提示、Skeleton、导出任务触发（`exportDailyStats`）。
 - Applications（M3）接入 `/admin/v1/applications/*`，提供筛选（Zustand 持久化）、导出任务（`exportApplications`），以及客户/审批摘要/历史/凭证多 Tab 详情。
+- ApplicationDetail / UserProfile（M4）实现借款人档案四视图，聚合 KYC、设备、隐私授权、渠道轨迹与历史借还信息。
+- Finance（M5）新增放款/还款/对账差异三 Tab，支持状态/渠道/日期筛选、失败重试、金额汇总与差异导出，角色受 `finance` & `super_admin` 控制。
 
 ## 🧪 Testing
 - `npm run test` —— Vitest + React Testing Library，当前覆盖 Sidebar RBAC 过滤（`src/components/__tests__/Sidebar.test.tsx`）。

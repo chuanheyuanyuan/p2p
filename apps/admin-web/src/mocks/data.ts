@@ -324,6 +324,48 @@ export interface UserProfile {
   collectionSummary?: BorrowerCollectionSummary;
 }
 
+export interface FinanceDisbursement {
+  id: string;
+  loanId: string;
+  user: string;
+  amount: number;
+  channel: string;
+  status: '待打款' | '成功' | '失败' | '重试中';
+  currency: string;
+  requestedAt: string;
+  updatedAt: string;
+  failureReason?: string;
+  attempts: number;
+  ledgerEntryId?: string;
+}
+
+export interface FinanceRepayment {
+  repaymentId: string;
+  loanId: string;
+  user: string;
+  amount: number;
+  channel: string;
+  status: '待入账' | '成功' | '失败' | '异常';
+  currency: string;
+  paidAt: string;
+  recordedAt: string;
+  method: string;
+  ledgerEntryId?: string;
+  difference?: number;
+}
+
+export interface ReconciliationDiff {
+  id: string;
+  date: string;
+  type: '放款' | '还款';
+  channel: string;
+  channelAmount: number;
+  ledgerAmount: number;
+  currency: string;
+  status: '未处理' | '处理中' | '已解决';
+  note?: string;
+}
+
 export interface AdminAccount {
   id: string;
   username: string;
@@ -455,6 +497,127 @@ export const defaultSessionMock: LoginResponse = {
   roles: ['super_admin', 'finance', 'ops_manager', 'analyst', 'channel_ops'],
   permissions: ['applications:read', 'ops:write', 'reports:view', 'channel:manage', 'finance:read']
 };
+
+export const financeDisbursementsMock: FinanceDisbursement[] = [
+  {
+    id: 'DISB-20251020001',
+    loanId: 'LN202510200001',
+    user: 'Chiamaka Eddy-okafor',
+    amount: 150,
+    currency: 'GHS',
+    channel: 'Bank Transfer',
+    status: '成功',
+    requestedAt: '2025-10-20 08:07',
+    updatedAt: '2025-10-20 08:12',
+    attempts: 1,
+    ledgerEntryId: 'LEDGER-9001'
+  },
+  {
+    id: 'DISB-20251020018',
+    loanId: 'LN202510190031',
+    user: 'Nancy A. Osei',
+    amount: 550,
+    currency: 'GHS',
+    channel: 'Flutterwave',
+    status: '失败',
+    failureReason: '银行通道超时',
+    requestedAt: '2025-10-20 09:01',
+    updatedAt: '2025-10-20 09:11',
+    attempts: 2
+  },
+  {
+    id: 'DISB-20251020032',
+    loanId: 'LN202510180088',
+    user: 'Samuel Adu',
+    amount: 5000,
+    currency: 'GHS',
+    channel: 'UnionPay',
+    status: '重试中',
+    requestedAt: '2025-10-20 10:15',
+    updatedAt: '2025-10-20 10:18',
+    attempts: 3,
+    failureReason: '账户校验失败'
+  }
+];
+
+export const financeRepaymentsMock: FinanceRepayment[] = [
+  {
+    repaymentId: 'RP20251020001',
+    loanId: 'LN202510200001',
+    user: 'Chiamaka Eddy-okafor',
+    amount: 172,
+    currency: 'GHS',
+    channel: 'Flutterwave',
+    status: '成功',
+    method: 'Momo',
+    paidAt: '2025-10-20 11:22',
+    recordedAt: '2025-10-20 11:25',
+    ledgerEntryId: 'LEDGER-9301',
+    difference: 0
+  },
+  {
+    repaymentId: 'RP20251020007',
+    loanId: 'LN202510190031',
+    user: 'Nancy A. Osei',
+    amount: 260,
+    currency: 'GHS',
+    channel: 'Bank Transfer',
+    status: '异常',
+    method: 'Bank Transfer',
+    paidAt: '2025-10-20 13:05',
+    recordedAt: '2025-10-20 13:06',
+    difference: -20
+  },
+  {
+    repaymentId: 'RP20251020015',
+    loanId: 'LN202510180088',
+    user: 'Samuel Adu',
+    amount: 500,
+    currency: 'GHS',
+    channel: 'USSD',
+    status: '待入账',
+    method: 'USSD',
+    paidAt: '2025-10-20 14:40',
+    recordedAt: '2025-10-20 14:41',
+    difference: 0
+  }
+];
+
+export const reconciliationDiffsMock: ReconciliationDiff[] = [
+  {
+    id: 'DIFF-20251020-01',
+    date: '2025-10-20',
+    type: '放款',
+    channel: 'Flutterwave',
+    channelAmount: 550,
+    ledgerAmount: 0,
+    currency: 'GHS',
+    status: '未处理',
+    note: '通道失败 ledger 未记账'
+  },
+  {
+    id: 'DIFF-20251020-04',
+    date: '2025-10-20',
+    type: '还款',
+    channel: 'Bank Transfer',
+    channelAmount: 280,
+    ledgerAmount: 260,
+    currency: 'GHS',
+    status: '处理中',
+    note: '重复回调待核实'
+  },
+  {
+    id: 'DIFF-20251019-02',
+    date: '2025-10-19',
+    type: '还款',
+    channel: 'UnionPay',
+    channelAmount: 1000,
+    ledgerAmount: 1000,
+    currency: 'GHS',
+    status: '已解决',
+    note: '手工补记完成'
+  }
+];
 
 export const applicationsMock: ApplicationRecord[] = [
   {

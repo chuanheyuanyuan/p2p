@@ -59,6 +59,34 @@ Content-Type: application/json
 Accept: application/json
 
 
+### Finance Disbursement List
+GET http://localhost:8002/admin/v1/finance/disbursements?status=FAILED&channel=Flutterwave&startDate=2025-10-20&endDate=2025-10-20
+Accept: application/json
+
+### Retry Disbursement
+POST http://localhost:8002/admin/v1/finance/disbursements/DISB-20251020018/retry
+Accept: application/json
+
+### Finance Repayments
+GET http://localhost:8002/admin/v1/finance/repayments?status=PENDING&channel=Bank%20Transfer
+Accept: application/json
+
+### Reconciliation Diff
+GET http://localhost:8002/admin/v1/finance/reconciliation?type=loan&status=OPEN
+Accept: application/json
+
+### Export Reconciliation
+POST http://localhost:8002/admin/v1/finance/reconciliation/export
+Content-Type: application/json
+Accept: application/json
+
+{
+  "type": "loan",
+  "startDate": "2025-10-16",
+  "endDate": "2025-10-20",
+  "channel": "Flutterwave"
+}
+
 ### Assign Case
 POST http://localhost:8002/admin/v1/cases/assign
 Content-Type: application/json

@@ -3,6 +3,7 @@ import {
   AppstoreOutlined,
   DashboardOutlined,
   DatabaseOutlined,
+  DollarCircleOutlined,
   FileTextOutlined,
   LineChartOutlined,
   PartitionOutlined,
@@ -57,6 +58,10 @@ export const navSections: NavSection[] = [
       { key: '/app-upgrade', label: 'App 升级', icon: <AppstoreOutlined />, roles: opsRoles },
       { key: '/channel', label: '渠道管理', icon: <PartitionOutlined />, roles: channelRoles }
     ]
+  },
+  {
+    title: '财务',
+    items: [{ key: '/finance', label: '放还款对账', icon: <DollarCircleOutlined />, roles: financeRoles }]
   }
 ];
 
@@ -74,5 +79,6 @@ export const routeRoleMap: Record<string, AdminRole[]> = {
   '/case-detail': collectionsRoles,
   '/ops': opsRoles,
   '/app-upgrade': opsRoles,
-  '/channel': channelRoles
+  '/channel': channelRoles,
+  '/finance': financeRoles
 };

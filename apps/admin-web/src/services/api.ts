@@ -4,12 +4,11 @@ import type {
   ApplicationRecord,
   CollectionCase,
   CollectionCaseDetail,
-  CollectionStats,
   DailyStat,
   DashboardStats,
-  DisbursementRecord,
-  ReconciliationRecord,
-  RepaymentRecord,
+  FinanceDisbursement,
+  FinanceRepayment,
+  ReconciliationDiff,
   UserProfile
 } from '../mocks/data';
 import {
@@ -17,14 +16,13 @@ import {
   applicationDetailsMock,
   collectionCasesMock,
   collectionDetailsMock,
-  collectionStatsMock,
   adminAccountsMock,
   dashboardMock,
   defaultSessionMock,
   dailyStatsMock,
-  disbursementsMock,
-  reconciliationsMock,
-  repaymentsMock,
+  financeDisbursementsMock,
+  financeRepaymentsMock,
+  reconciliationDiffsMock,
   userProfilesMock
 } from '../mocks/data';
 import type { LoginPayload, LoginResponse } from '../types/auth';
@@ -136,8 +134,6 @@ export interface CollectionsQuery {
   pageSize?: number;
   bucket?: string;
   assignee?: string;
-  caseId?: string;
-  status?: string;
 }
 
 export async function fetchCollectionCases(params: CollectionsQuery): Promise<PaginatedResponse<CollectionCase>> {
@@ -164,36 +160,6 @@ export async function fetchCollectionDetail(caseId: string): Promise<CollectionC
   }
 }
 
-export interface CollectionActionPayload {
-  action: string;
-  result?: string;
-  note?: string;
-  status?: string;
-  ptpAmount?: number;
-  ptpDueAt?: string;
-}
-
-export async function createCollectionAction(caseId: string, payload: CollectionActionPayload): Promise<CollectionCaseDetail> {
-  try {
-    return await request(`/admin/v1/collections/cases/${caseId}/actions`, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-  } catch (error) {
-    console.warn('createCollectionAction fallback', error);
-    return fetchCollectionDetail(caseId);
-  }
-}
-
-export async function fetchCollectionStats(): Promise<CollectionStats> {
-  try {
-    return await request('/admin/v1/collections/stats');
-  } catch (error) {
-    console.warn('fetchCollectionStats fallback', error);
-    return collectionStatsMock;
-  }
-}
-
 export interface DailyStatsQuery {
   startDate?: string;
   endDate?: string;
@@ -206,11 +172,10 @@ export interface DailyStatsQuery {
 export interface FinanceQuery {
   status?: string;
   channel?: string;
-  loanId?: string;
   startDate?: string;
   endDate?: string;
-  page?: number;
-  pageSize?: number;
+  keyword?: string;
+  type?: string;
 }
 
 export async function fetchDailyStats(params: DailyStatsQuery): Promise<PaginatedResponse<DailyStat>> {
@@ -253,43 +218,118 @@ export async function exportDailyStats(params: DailyStatsQuery): Promise<{ taskI
   }
 }
 
-function buildSearchParams(params: Record<string, unknown>): string {
-  const search = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== '') {
-      search.append(key, String(value));
+export async function fetchFinanceDisbursements(
+  params: FinanceQuery
+): Promise<PaginatedResponse<FinanceDisbursement>> {
+  try {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) search.append(key, String(value));
+    });
+    return await request(`/admin/v1/finance/disbursements?${search.toString()}`);
+  } catch (error) {
+    console.warn('fetchFinanceDisbursements fallback', error);
+    const list = financeDisbursementsMock.filter((item) => {
+      if (params.status && item.status !== params.status) return false;
+      if (params.channel && item.channel !== params.channel) return false;
+      if (params.keyword) {
+        const keyword = params.keyword.toLowerCase();
+        if (!item.loanId.toLowerCase().includes(keyword) && !item.user.toLowerCase().includes(keyword)) {
+          return false;
+        }
+      }
+      if (!matchesDateRange(item.requestedAt, params.startDate, params.endDate)) return false;
+      return true;
+    });
+    return { list, total: list.length };
+  }
+}
+
+export async function retryFinanceDisbursement(disbursementId: string): Promise<{ success: boolean }> {
+  try {
+    return await request<{ success: boolean }>(`/admin/v1/finance/disbursements/${disbursementId}/retry`, {
+      method: 'POST'
+    });
+  } catch (error) {
+    console.warn(`retryFinanceDisbursement(${disbursementId}) fallback`, error);
+    if (!financeDisbursementsMock.find((item) => item.id === disbursementId)) {
+      throw new Error('未找到放款指令');
     }
-  });
-  const query = search.toString();
-  return query ? `?${query}` : '';
-}
-
-export async function fetchDisbursements(params: FinanceQuery): Promise<PaginatedResponse<DisbursementRecord>> {
-  try {
-    const query = buildSearchParams(params);
-    return await request(`/admin/v1/finance/disbursements${query}`);
-  } catch (error) {
-    console.warn('fetchDisbursements fallback', error);
-    return { list: disbursementsMock, total: disbursementsMock.length };
+    return { success: true };
   }
 }
 
-export async function fetchRepayments(params: FinanceQuery): Promise<PaginatedResponse<RepaymentRecord>> {
+export async function fetchFinanceRepayments(
+  params: FinanceQuery
+): Promise<PaginatedResponse<FinanceRepayment>> {
   try {
-    const query = buildSearchParams(params);
-    return await request(`/admin/v1/finance/repayments${query}`);
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) search.append(key, String(value));
+    });
+    return await request(`/admin/v1/finance/repayments?${search.toString()}`);
   } catch (error) {
-    console.warn('fetchRepayments fallback', error);
-    return { list: repaymentsMock, total: repaymentsMock.length };
+    console.warn('fetchFinanceRepayments fallback', error);
+    const list = financeRepaymentsMock.filter((item) => {
+      if (params.status && item.status !== params.status) return false;
+      if (params.channel && item.channel !== params.channel) return false;
+      if (params.keyword) {
+        const keyword = params.keyword.toLowerCase();
+        if (!item.loanId.toLowerCase().includes(keyword) && !item.user.toLowerCase().includes(keyword)) {
+          return false;
+        }
+      }
+      if (!matchesDateRange(item.paidAt, params.startDate, params.endDate)) return false;
+      return true;
+    });
+    return { list, total: list.length };
   }
 }
 
-export async function fetchReconciliations(params: { refType?: string; refId?: string; page?: number; pageSize?: number }): Promise<PaginatedResponse<ReconciliationRecord>> {
+export async function fetchReconciliationDiffs(
+  params: FinanceQuery
+): Promise<PaginatedResponse<ReconciliationDiff>> {
   try {
-    const query = buildSearchParams(params);
-    return await request(`/admin/v1/finance/reconciliations${query}`);
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) search.append(key, String(value));
+    });
+    return await request(`/admin/v1/finance/reconciliation?${search.toString()}`);
   } catch (error) {
-    console.warn('fetchReconciliations fallback', error);
-    return { list: reconciliationsMock, total: reconciliationsMock.length };
+    console.warn('fetchReconciliationDiffs fallback', error);
+    const list = reconciliationDiffsMock.filter((item) => {
+      if (params.status && item.status !== params.status) return false;
+      if (params.channel && item.channel !== params.channel) return false;
+      if (params.type && item.type !== params.type) return false;
+      if (!matchesDateRange(item.date, params.startDate, params.endDate)) return false;
+      return true;
+    });
+    return { list, total: list.length };
   }
 }
+
+export async function exportReconciliation(params: FinanceQuery): Promise<{ taskId: string }> {
+  try {
+    return await request<{ taskId: string }>('/admin/v1/finance/reconciliation/export', {
+      method: 'POST',
+      body: JSON.stringify(params)
+    });
+  } catch (error) {
+    console.warn('exportReconciliation fallback', error);
+    return { taskId: `mock-finance-export-${Date.now()}` };
+  }
+}
+
+const matchesDateRange = (value: string, start?: string, end?: string) => {
+  if (!start && !end) return true;
+  const ts = new Date(value.replace(/-/g, '/')).getTime();
+  if (start) {
+    const startTs = new Date(`${start} 00:00`).getTime();
+    if (ts < startTs) return false;
+  }
+  if (end) {
+    const endTs = new Date(`${end} 23:59:59`).getTime();
+    if (ts > endTs) return false;
+  }
+  return true;
+};
