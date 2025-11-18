@@ -48,21 +48,25 @@ export interface ApplicationRecord {
   id: string;
   userId: string;
   product: string;
+  productId?: string;
   name: string;
-  phone: string;
-  channel: string;
-  level: string;
+  phone?: string;
+  channel?: string;
+  level?: string;
   amount: number;
   term: string;
-  reviewer: string;
+  reviewer?: string;
   status: '通过' | '拒绝' | '审核中' | '待签署';
   statusCode?: string;
   submittedAt: string;
-  appVersion: string;
+  appVersion?: string;
   tags?: string[];
   repeat?: boolean;
   riskScore?: number;
   autoDecision?: string;
+  outstandingAmount?: number;
+  originalAmount?: number;
+  lastPaidAt?: string;
 }
 
 export interface ApprovalNode {
@@ -380,6 +384,7 @@ export const applicationsMock: ApplicationRecord[] = [
   {
     id: 'LN202510200001',
     userId: 'U10001',
+    productId: 'P-PLUS-01',
     product: 'InsCash Plus',
     name: 'Chiamaka Eddy-okafor',
     phone: '+233-553-001-123',
@@ -395,11 +400,15 @@ export const applicationsMock: ApplicationRecord[] = [
     tags: ['复借', '高价值'],
     repeat: true,
     riskScore: 712,
-    autoDecision: 'AUTO_PASS'
+    autoDecision: 'AUTO_PASS',
+    outstandingAmount: 50,
+    originalAmount: 150,
+    lastPaidAt: '2025-10-18 10:00:00'
   },
   {
     id: 'LN202510190031',
     userId: 'U10002',
+    productId: 'P-MAX-01',
     product: 'InsCash Max',
     name: 'Nancy A. Osei',
     phone: '+233-553-000-175',
@@ -415,11 +424,15 @@ export const applicationsMock: ApplicationRecord[] = [
     tags: ['OCR 待复核'],
     repeat: false,
     riskScore: 655,
-    autoDecision: 'MANUAL_REVIEW'
+    autoDecision: 'MANUAL_REVIEW',
+    outstandingAmount: 550,
+    originalAmount: 550,
+    lastPaidAt: '2025-10-10 12:00:00'
   },
   {
     id: 'LN202510180088',
     userId: 'U10003',
+    productId: 'P-PRO-01',
     product: 'InsCash Pro',
     name: 'Samuel Adu',
     phone: '+233-553-888-002',
@@ -435,11 +448,14 @@ export const applicationsMock: ApplicationRecord[] = [
     tags: ['新客'],
     repeat: false,
     riskScore: 488,
-    autoDecision: 'AUTO_REJECT'
+    autoDecision: 'AUTO_REJECT',
+    outstandingAmount: 0,
+    originalAmount: 5000
   },
   {
     id: 'LN202510200145',
     userId: 'U10004',
+    productId: 'P-PLUS-01',
     product: 'InsCash Plus',
     name: 'Yaw Mensah',
     phone: '+233-553-777-201',
@@ -455,7 +471,10 @@ export const applicationsMock: ApplicationRecord[] = [
     tags: ['合同待签'],
     repeat: false,
     riskScore: 690,
-    autoDecision: 'AUTO_PASS'
+    autoDecision: 'AUTO_PASS',
+    outstandingAmount: 320,
+    originalAmount: 320,
+    lastPaidAt: '2025-10-19 09:00:00'
   }
 ];
 
@@ -762,7 +781,11 @@ export const userProfilesMock: Record<string, UserProfile> = {
     riskFlags: ['设备可信'],
     address: 'Accra, Ghana',
     gps: '5.6037, -0.1870',
-    blacklisted: false
+    blacklisted: false,
+    loanSummary: { totalLoans: 4, activeLoans: 2, outstandingAmount: 320, lastLoanId: 'LN202510200001', lastStatus: '通过', lastSubmittedAt: '2025-10-20 08:06:08', repeat: true },
+    device: { deviceId: 'device-ops-01', platform: 'android', appVersion: '1.0.17', lastActiveAt: '2025-10-20 07:55', privacyConsent: true, locationConsent: false },
+    kyc: { status: 'APPROVED', docType: 'National ID', docNumber: 'GHA-718571472-2', reviewer: 'KYC Bot', reviewedAt: '2025-10-18 10:00:00' },
+    collectionSummary: { openCases: 1, lastBucket: 'D7', lastStatus: 'OPEN', lastActionAt: '2025-10-20 09:30:00' }
   },
   U10002: {
     userId: 'U10002',
@@ -778,7 +801,11 @@ export const userProfilesMock: Record<string, UserProfile> = {
     riskFlags: ['通讯录稀疏'],
     address: 'Ashanti Bantama BA 52',
     gps: '6.6021, -1.6246',
-    blacklisted: false
+    blacklisted: false,
+    loanSummary: { totalLoans: 2, activeLoans: 2, outstandingAmount: 550, lastLoanId: 'LN202510190031', lastStatus: '审核中', lastSubmittedAt: '2025-10-19 22:14:09', repeat: false },
+    device: { deviceId: 'device-ops-02', platform: 'android', appVersion: '1.0.16', lastActiveAt: '2025-10-20 08:03', privacyConsent: true, locationConsent: true },
+    kyc: { status: 'APPROVED', docType: 'Passport', docNumber: 'P0021882', reviewer: 'Nancy QA', reviewedAt: '2025-10-15 12:00:00' },
+    collectionSummary: { openCases: 0, lastBucket: undefined, lastStatus: undefined, lastActionAt: undefined }
   },
   U10003: {
     userId: 'U10003',
@@ -794,8 +821,13 @@ export const userProfilesMock: Record<string, UserProfile> = {
     riskFlags: ['设备更换频繁'],
     address: 'Kumasi, Ghana',
     gps: '6.6906, -1.6209',
-    blacklisted: false
+    blacklisted: false,
+    loanSummary: { totalLoans: 1, activeLoans: 0, outstandingAmount: 0, lastLoanId: 'LN202510180088', lastStatus: '拒绝', lastSubmittedAt: '2025-10-18 15:33:42', repeat: false },
+    device: { deviceId: 'device-new-01', platform: 'ios', appVersion: '1.0.15', lastActiveAt: '2025-10-19 21:30', privacyConsent: false, locationConsent: false },
+    kyc: { status: 'PENDING', docType: 'National ID', docNumber: 'GHA-100200300', reviewer: undefined, reviewedAt: undefined },
+    collectionSummary: { openCases: 0, lastBucket: undefined, lastStatus: undefined, lastActionAt: undefined }
   }
 };
+
 import type { AdminRole } from '../constants/roles';
 import type { LoginResponse } from '../types/auth';
