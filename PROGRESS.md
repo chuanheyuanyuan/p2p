@@ -76,6 +76,10 @@
   - `GET /admin/v1/applications`/`/{id}`/`/export`：输出申请列表、详情（含审批历史/文档）与导出任务号；`GET /admin/v1/users/{userId}` 聚合设备/KYC 档案。
   - `GET /admin/v1/collections/cases`/`/{id}`：加载催收案件、行动、PTP 记录；`GET /admin/v1/dashboard`、`/reports/daily`、`POST /reports/daily/export` 提供运营看板与日报。
   - README.vibe/sample.http 更新，新增 `pytest services/bff-admin/tests/test_bff_admin.py` 覆盖登录、申请、催收、报表串联流。
+- `bff-mobile`（T17）上线借款端聚合层：
+  - 目录：`services/bff-mobile/`，端口 8001，通过 `httpx` 调用 loan-svc 聚合 Dashboard/贷款清单，并在 POST `/mobile/v1/loans` 自动注入 `userId`。
+  - `GET /mobile/v1/dashboard` 返回应还金额、活动贷款与产品推荐；`GET /mobile/v1/loans` 列出 borrower 借款记录，全部接口需 `X-User-Id` 请求头。
+  - README.vibe/sample.http 同步说明 header、示例；新增 `tests/test_mobile_bff.py` 使用 `respx` mock 下游，保障聚合逻辑。
 
 ### admin-web（T19 · M1 登录 & RBAC）
 - 技术栈调整为 React Query + Zustand：所有列表/详情数据改用 React Query，`src/services/http.ts` 自动注入 `Authorization`，mock 兜底仍在 `services/api.ts`。

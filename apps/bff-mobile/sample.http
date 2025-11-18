@@ -2,12 +2,22 @@
 GET http://localhost:8001/mobile/v1/dashboard
 Content-Type: application/json
 Accept: application/json
+X-User-Id: borrower-001
+
+
+### List Loans
+GET http://localhost:8001/mobile/v1/loans
+Content-Type: application/json
+Accept: application/json
+X-User-Id: borrower-001
 
 
 ### Create Loan Draft
 POST http://localhost:8001/mobile/v1/loans
 Content-Type: application/json
 Accept: application/json
+X-User-Id: borrower-001
+X-Idempotency-Key: {{ $uuid }}
 
 {
   "productId": "P_BASIC",
