@@ -83,7 +83,7 @@
 - `observability-svc`（T20）提供统一观测与审计：
   - 目录：`infra/observability/`，端口 8030，FastAPI `POST/GET /audit/events` 将事件写入 `audit.db` 并支持 actor/action/time 过滤，启动即执行过期数据清理（默认 90 天）。
   - 内置 `otel-collector-config.yaml` 与 `dashboards/` 模板占位，可直接运行 OTel Collector 将 trace/log/metrics 写入本地文件，后续接入 Grafana/Loki。
-  - README 记录安装、curl 示例、TODO，`tests/test_audit_api.py` 使用 TestClient 覆盖创建及区间过滤；`Taskfile` 新增 `task run:observability` 方便启动。
+  - README 记录安装、curl 示例、TODO；新增 `GET /audit/events/{id}` 与 `/metrics`，新增 Kafka/ClickHouse 管道 stub（写入本地 log）、JWT Bearer 鉴权（复用 auth-svc secret、提取 `service` claim 写入 `sourceService`）、`dashboards/audit-overview.json` Grafana 模板，以及 `tests/test_audit_api.py` 覆盖创建/过滤/详情/metrics/管道，`Taskfile` 同步增加 `task run:observability`。
 
 ### admin-web（T19 · M1 登录 & RBAC）
 - 技术栈调整为 React Query + Zustand：所有列表/详情数据改用 React Query，`src/services/http.ts` 自动注入 `Authorization`，mock 兜底仍在 `services/api.ts`。
