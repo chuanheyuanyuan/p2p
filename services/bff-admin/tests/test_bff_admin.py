@@ -383,7 +383,6 @@ def test_application_filters(client):
     assert future.status_code == 200
     assert future.json()['total'] == 0
 
-
 def test_finance_endpoints(client):
     headers = _auth_header(client)
     disb = client.get('/admin/v1/finance/disbursements', headers=headers)
@@ -395,3 +394,23 @@ def test_finance_endpoints(client):
     recon = client.get('/admin/v1/finance/reconciliations', headers=headers)
     assert recon.status_code == 200
     assert recon.json()['total'] == 2
+
+
+def test_collection_action_and_stats(client):
+    headers = _auth_header(client)
+    stats = client.get('/admin/v1/collections/stats', headers=headers)
+    assert stats.status_code == 200
+    assert stats.json()['totalCases'] == 1
+
+    payload = {
+        'action': 'CALL',
+        'result': 'PTP',
+        'note': '用户承诺',
+        'ptpAmount': 200,
+        'ptpDueAt': '2025-10-25',
+        'status': 'PTP'
+    }
+    resp = client.post('/admin/v1/collections/cases/CASE1/actions', headers=headers, json=payload)
+    assert resp.status_code == 200
+    detail = resp.json()
+    assert detail['ptpAmount'] == 200

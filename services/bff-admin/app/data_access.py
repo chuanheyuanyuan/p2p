@@ -600,7 +600,7 @@ def get_user_profile(settings: Settings, user_id: str) -> dict:
     loan_summary = {
         'totalLoans': len(loans),
         'activeLoans': active_loans,
-        'outstandingAmount': outstanding_total,
+        'outstandingAmount': float(outstanding_total),
         'lastLoanId': last_loan['id'] if last_loan else None,
         'lastStatus': STATUS_LABELS.get(last_loan['status'], last_loan['status']) if last_loan else None,
         'lastSubmittedAt': last_loan['createdAt'] if last_loan else None,

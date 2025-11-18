@@ -43,6 +43,12 @@ const ApplicationDetail = () => {
     拒绝: 'red',
     待签署: 'blue'
   };
+  const summaryMetrics = [
+    { label: '放款金额', value: formatCurrency(application.amount) },
+    { label: '剩余本金', value: application.outstandingAmount ? formatCurrency(Number(application.outstandingAmount)) : '-' },
+    { label: '风险评分', value: application.riskScore ?? '-' },
+    { label: '上次还款', value: application.lastPaidAt ?? '暂无记录' }
+  ];
 
   return (
     <Tabs
@@ -52,60 +58,100 @@ const ApplicationDetail = () => {
           key: 'base',
           label: '客户信息',
           children: (
-            <Row gutter={16} wrap>
-              <Col xs={24} lg={14}>
-                <Card
-                  title="贷款信息"
-                  extra={
-                    <Space size="middle">
-                      <Badge color={statusColorMap[application.status] ?? 'default'} text={application.status} />
-                      <a onClick={() => navigate(`/users/${application.userId}`)}>查看用户档案</a>
-                    </Space>
-                  }
-                >
-                  <Descriptions column={2} bordered size="small">
-                    <Descriptions.Item label="贷款编号">{application.id}</Descriptions.Item>
-                    <Descriptions.Item label="申请时间">{basic.applyTime}</Descriptions.Item>
-                    <Descriptions.Item label="产品">{application.product}</Descriptions.Item>
-                    <Descriptions.Item label="金额">{formatCurrency(application.amount)}</Descriptions.Item>
-                    <Descriptions.Item label="期限">{application.term}</Descriptions.Item>
-                    <Descriptions.Item label="渠道">{basic.source}</Descriptions.Item>
-                    <Descriptions.Item label="App 版本">{basic.appVersion}</Descriptions.Item>
-                    <Descriptions.Item label="设备">{`${basic.deviceBrand} / ${basic.deviceModel}`}</Descriptions.Item>
-                  </Descriptions>
-                </Card>
-              </Col>
-              <Col xs={24} lg={10}>
-                <Space direction="vertical" size={16} style={{ width: '100%' }}>
-                  <Card title="客户信息">
-                    <Descriptions column={1} size="small">
-                      <Descriptions.Item label="姓名">{application.name}</Descriptions.Item>
-                      <Descriptions.Item label="手机号">{maskPhone(application.phone)}</Descriptions.Item>
-                      <Descriptions.Item label="邮箱">{customer.email}</Descriptions.Item>
-                      <Descriptions.Item label="SIM">{customer.sim}</Descriptions.Item>
-                      <Descriptions.Item label="证件">{`${customer.idType} · ${customer.idNumber}`}</Descriptions.Item>
-                      <Descriptions.Item label="教育/婚姻">{`${customer.education} · ${customer.maritalStatus}`}</Descriptions.Item>
-                      <Descriptions.Item label="地址">{customer.address}</Descriptions.Item>
-                      <Descriptions.Item label="GPS">{customer.gps}</Descriptions.Item>
-                    </Descriptions>
-                  </Card>
-                  <Card title="审批摘要">
-                    <Descriptions column={1} size="small">
-                      <Descriptions.Item label="机审结果">{approvalSummary.autoDecision}</Descriptions.Item>
-                      <Descriptions.Item label="人工结果">{approvalSummary.manualDecision}</Descriptions.Item>
-                      <Descriptions.Item label="风险评分">{approvalSummary.riskScore}</Descriptions.Item>
-                      <Descriptions.Item label="命中原因">
-                        <Space size={4} wrap>
-                          {approvalSummary.reasons.map((reason) => (
-                            <Tag key={reason}>{reason}</Tag>
+            <Space direction="vertical" size={16} style={{ width: '100%' }}>
+              <Card>
+                <Row gutter={[16, 16]}>
+                  {summaryMetrics.map((metric) => (
+                    <Col key={metric.label} xs={12} md={6}>
+                      <div>
+                        <Typography.Text type="secondary">{metric.label}</Typography.Text>
+                        <Typography.Title level={4} style={{ margin: 0 }}>
+                          {metric.value}
+                        </Typography.Title>
+                      </div>
+                    </Col>
+                  ))}
+                </Row>
+              </Card>
+              <Row gutter={16} wrap>
+                <Col xs={24} lg={14}>
+                  <Space direction="vertical" size={16} style={{ width: '100%' }}>
+                    <Card
+                      title="贷款信息"
+                      extra={
+                        <Space size="middle">
+                          <Badge color={statusColorMap[application.status] ?? 'default'} text={application.status} />
+                          {application.repeat && <Tag color="purple">复借用户</Tag>}
+                          <a onClick={() => navigate(`/users/${application.userId}`)}>查看用户档案</a>
+                        </Space>
+                      }
+                    >
+                      <Descriptions column={2} bordered size="small">
+                        <Descriptions.Item label="贷款编号">{application.id}</Descriptions.Item>
+                        <Descriptions.Item label="产品">{application.product}</Descriptions.Item>
+                        <Descriptions.Item label="金额">{formatCurrency(application.amount)}</Descriptions.Item>
+                        <Descriptions.Item label="期限">{application.term}</Descriptions.Item>
+                        <Descriptions.Item label="渠道">{basic.source}</Descriptions.Item>
+                        <Descriptions.Item label="App 版本">{basic.appVersion ?? '-'}</Descriptions.Item>
+                        <Descriptions.Item label="设备">{`${basic.deviceBrand} / ${basic.deviceModel}`}</Descriptions.Item>
+                        <Descriptions.Item label="状态码">{application.statusCode ?? '-'}</Descriptions.Item>
+                        <Descriptions.Item label="提交时间">{basic.applyTime}</Descriptions.Item>
+                        <Descriptions.Item label="最后更新">{application.lastPaidAt ?? application.submittedAt}</Descriptions.Item>
+                      </Descriptions>
+                    </Card>
+                    <Card title="还款概览">
+                      <Descriptions column={2} size="small">
+                        <Descriptions.Item label="原始金额">
+                          {application.originalAmount ? formatCurrency(Number(application.originalAmount)) : '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="剩余本金">
+                          {application.outstandingAmount ? formatCurrency(Number(application.outstandingAmount)) : '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="上次还款时间">{application.lastPaidAt ?? '暂无'}</Descriptions.Item>
+                        <Descriptions.Item label="机审决策">{approvalSummary.autoDecision ?? '-'}</Descriptions.Item>
+                      </Descriptions>
+                    </Card>
+                  </Space>
+                </Col>
+                <Col xs={24} lg={10}>
+                  <Space direction="vertical" size={16} style={{ width: '100%' }}>
+                    <Card title="客户信息">
+                      <Descriptions column={1} size="small">
+                        <Descriptions.Item label="姓名">{application.name}</Descriptions.Item>
+                        <Descriptions.Item label="手机号">{maskPhone(application.phone)}</Descriptions.Item>
+                        <Descriptions.Item label="邮箱">{customer.email ?? '-'}</Descriptions.Item>
+                        <Descriptions.Item label="SIM">{customer.sim}</Descriptions.Item>
+                        <Descriptions.Item label="证件">{customer.idNumber ? `${customer.idType} · ${customer.idNumber}` : '-'}</Descriptions.Item>
+                        <Descriptions.Item label="教育/婚姻">{`${customer.education ?? '-'} · ${customer.maritalStatus ?? '-'}`}</Descriptions.Item>
+                        <Descriptions.Item label="地址">{customer.address ?? '-'}</Descriptions.Item>
+                        <Descriptions.Item label="GPS">{customer.gps ?? '-'}</Descriptions.Item>
+                      </Descriptions>
+                      {application.tags && application.tags.length > 0 && (
+                        <Space size={4} wrap style={{ marginTop: 12 }}>
+                          {application.tags.map((tag) => (
+                            <Tag key={tag}>{tag}</Tag>
                           ))}
                         </Space>
-                      </Descriptions.Item>
-                    </Descriptions>
-                  </Card>
-                </Space>
-              </Col>
-            </Row>
+                      )}
+                    </Card>
+                    <Card title="审批摘要">
+                      <Descriptions column={1} size="small">
+                        <Descriptions.Item label="机审结果">{approvalSummary.autoDecision ?? '-'}</Descriptions.Item>
+                        <Descriptions.Item label="人工结果">{approvalSummary.manualDecision ?? '-'}</Descriptions.Item>
+                        <Descriptions.Item label="风险评分">{approvalSummary.riskScore ?? '-'}</Descriptions.Item>
+                        <Descriptions.Item label="命中原因">
+                          <Space size={4} wrap>
+                            {approvalSummary.reasons.map((reason) => (
+                              <Tag key={reason}>{reason}</Tag>
+                            ))}
+                          </Space>
+                        </Descriptions.Item>
+                      </Descriptions>
+                    </Card>
+                  </Space>
+                </Col>
+              </Row>
+            </Space>
           )
         },
         {
@@ -121,7 +167,11 @@ const ApplicationDetail = () => {
               </Descriptions>
               <Timeline mode="left">
                 {approval.map((node: ApprovalNode) => (
-                  <Timeline.Item key={node.node} label={node.time} color={node.result === '通过' ? 'green' : 'red'}>
+                  <Timeline.Item
+                    key={`${node.node}-${node.time}`}
+                    label={node.time}
+                    color={/通过|PASS/i.test(node.result) ? 'green' : 'red'}
+                  >
                     <Typography.Text strong>{node.node}</Typography.Text>
                     <div>结果：{node.result}</div>
                     <div>操作人：{node.operator}</div>

@@ -93,21 +93,25 @@ export interface ApplicationRecord {
   id: string;
   userId: string;
   product: string;
+  productId?: string;
   name: string;
-  phone: string;
-  channel: string;
-  level: string;
+  phone?: string;
+  channel?: string;
+  level?: string;
   amount: number;
   term: string;
-  reviewer: string;
+  reviewer?: string;
   status: '通过' | '拒绝' | '审核中' | '待签署';
   statusCode?: string;
   submittedAt: string;
-  appVersion: string;
+  appVersion?: string;
   tags?: string[];
   repeat?: boolean;
   riskScore?: number;
   autoDecision?: string;
+  outstandingAmount?: number;
+  originalAmount?: number;
+  lastPaidAt?: string;
 }
 
 export interface ApprovalNode {
@@ -716,6 +720,7 @@ export const applicationsMock: ApplicationRecord[] = [
   {
     id: 'LN202510200001',
     userId: 'U10001',
+    productId: 'P-PLUS-01',
     product: 'InsCash Plus',
     name: 'Chiamaka Eddy-okafor',
     phone: '+233-553-001-123',
@@ -731,11 +736,15 @@ export const applicationsMock: ApplicationRecord[] = [
     tags: ['复借', '高价值'],
     repeat: true,
     riskScore: 712,
-    autoDecision: 'AUTO_PASS'
+    autoDecision: 'AUTO_PASS',
+    outstandingAmount: 50,
+    originalAmount: 150,
+    lastPaidAt: '2025-10-18 10:00:00'
   },
   {
     id: 'LN202510190031',
     userId: 'U10002',
+    productId: 'P-MAX-01',
     product: 'InsCash Max',
     name: 'Nancy A. Osei',
     phone: '+233-553-000-175',
@@ -751,11 +760,15 @@ export const applicationsMock: ApplicationRecord[] = [
     tags: ['OCR 待复核'],
     repeat: false,
     riskScore: 655,
-    autoDecision: 'MANUAL_REVIEW'
+    autoDecision: 'MANUAL_REVIEW',
+    outstandingAmount: 550,
+    originalAmount: 550,
+    lastPaidAt: '2025-10-10 12:00:00'
   },
   {
     id: 'LN202510180088',
     userId: 'U10003',
+    productId: 'P-PRO-01',
     product: 'InsCash Pro',
     name: 'Samuel Adu',
     phone: '+233-553-888-002',
@@ -771,11 +784,14 @@ export const applicationsMock: ApplicationRecord[] = [
     tags: ['新客'],
     repeat: false,
     riskScore: 488,
-    autoDecision: 'AUTO_REJECT'
+    autoDecision: 'AUTO_REJECT',
+    outstandingAmount: 0,
+    originalAmount: 5000
   },
   {
     id: 'LN202510200145',
     userId: 'U10004',
+    productId: 'P-PLUS-01',
     product: 'InsCash Plus',
     name: 'Yaw Mensah',
     phone: '+233-553-777-201',
@@ -791,7 +807,10 @@ export const applicationsMock: ApplicationRecord[] = [
     tags: ['合同待签'],
     repeat: false,
     riskScore: 690,
-    autoDecision: 'AUTO_PASS'
+    autoDecision: 'AUTO_PASS',
+    outstandingAmount: 320,
+    originalAmount: 320,
+    lastPaidAt: '2025-10-19 09:00:00'
   }
 ];
 
@@ -1096,40 +1115,14 @@ export const userProfilesMock: Record<string, UserProfile> = {
     lastLogin: '2025-10-20 07:55',
     tags: ['复借', '高价值'],
     riskFlags: ['设备可信'],
-  address: 'Accra, Ghana',
-  gps: '5.6037, -0.1870',
-  blacklisted: false,
-  loanSummary: {
-    totalLoans: 4,
-    activeLoans: 2,
-    outstandingAmount: 320,
-    lastLoanId: 'LN202510200001',
-    lastStatus: '通过',
-    lastSubmittedAt: '2025-10-20 08:06:08',
-    repeat: true
+    address: 'Accra, Ghana',
+    gps: '5.6037, -0.1870',
+    blacklisted: false,
+    loanSummary: { totalLoans: 4, activeLoans: 2, outstandingAmount: 320, lastLoanId: 'LN202510200001', lastStatus: '通过', lastSubmittedAt: '2025-10-20 08:06:08', repeat: true },
+    device: { deviceId: 'device-ops-01', platform: 'android', appVersion: '1.0.17', lastActiveAt: '2025-10-20 07:55', privacyConsent: true, locationConsent: false },
+    kyc: { status: 'APPROVED', docType: 'National ID', docNumber: 'GHA-718571472-2', reviewer: 'KYC Bot', reviewedAt: '2025-10-18 10:00:00' },
+    collectionSummary: { openCases: 1, lastBucket: 'D7', lastStatus: 'OPEN', lastActionAt: '2025-10-20 09:30:00' }
   },
-  device: {
-    deviceId: 'device-ops-01',
-    platform: 'android',
-    appVersion: '1.0.17',
-    lastActiveAt: '2025-10-20 07:55',
-    privacyConsent: true,
-    locationConsent: false
-  },
-  kyc: {
-    status: 'APPROVED',
-    docType: 'National ID',
-    docNumber: 'GHA-718571472-2',
-    reviewer: 'KYC Bot',
-    reviewedAt: '2025-10-18 10:00:00'
-  },
-  collectionSummary: {
-    openCases: 1,
-    lastBucket: 'D7',
-    lastStatus: 'OPEN',
-    lastActionAt: '2025-10-20 09:30:00'
-  }
-},
   U10002: {
     userId: 'U10002',
     name: 'Nancy Agyapomaa Osei',
@@ -1143,39 +1136,13 @@ export const userProfilesMock: Record<string, UserProfile> = {
     tags: ['社交渠道'],
     riskFlags: ['通讯录稀疏'],
     address: 'Ashanti Bantama BA 52',
-  gps: '6.6021, -1.6246',
-  blacklisted: false,
-  loanSummary: {
-    totalLoans: 2,
-    activeLoans: 2,
-    outstandingAmount: 550,
-    lastLoanId: 'LN202510190031',
-    lastStatus: '审核中',
-    lastSubmittedAt: '2025-10-19 22:14:09',
-    repeat: false
+    gps: '6.6021, -1.6246',
+    blacklisted: false,
+    loanSummary: { totalLoans: 2, activeLoans: 2, outstandingAmount: 550, lastLoanId: 'LN202510190031', lastStatus: '审核中', lastSubmittedAt: '2025-10-19 22:14:09', repeat: false },
+    device: { deviceId: 'device-ops-02', platform: 'android', appVersion: '1.0.16', lastActiveAt: '2025-10-20 08:03', privacyConsent: true, locationConsent: true },
+    kyc: { status: 'APPROVED', docType: 'Passport', docNumber: 'P0021882', reviewer: 'Nancy QA', reviewedAt: '2025-10-15 12:00:00' },
+    collectionSummary: { openCases: 0, lastBucket: undefined, lastStatus: undefined, lastActionAt: undefined }
   },
-  device: {
-    deviceId: 'device-ops-02',
-    platform: 'android',
-    appVersion: '1.0.16',
-    lastActiveAt: '2025-10-20 08:03',
-    privacyConsent: true,
-    locationConsent: true
-  },
-  kyc: {
-    status: 'APPROVED',
-    docType: 'Passport',
-    docNumber: 'P0021882',
-    reviewer: 'Nancy QA',
-    reviewedAt: '2025-10-15 12:00:00'
-  },
-  collectionSummary: {
-    openCases: 0,
-    lastBucket: undefined,
-    lastStatus: undefined,
-    lastActionAt: undefined
-  }
-},
   U10003: {
     userId: 'U10003',
     name: 'Samuel Asiedu Adu',
@@ -1189,247 +1156,13 @@ export const userProfilesMock: Record<string, UserProfile> = {
     tags: ['新客'],
     riskFlags: ['设备更换频繁'],
     address: 'Kumasi, Ghana',
-  gps: '6.6906, -1.6209',
-  blacklisted: false,
-  loanSummary: {
-    totalLoans: 1,
-    activeLoans: 0,
-    outstandingAmount: 0,
-    lastLoanId: 'LN202510180088',
-    lastStatus: '拒绝',
-    lastSubmittedAt: '2025-10-18 15:33:42',
-    repeat: false
-  },
-  device: {
-    deviceId: 'device-new-01',
-    platform: 'ios',
-    appVersion: '1.0.15',
-    lastActiveAt: '2025-10-19 21:30',
-    privacyConsent: false,
-    locationConsent: false
-  },
-  kyc: {
-    status: 'PENDING',
-    docType: 'National ID',
-    docNumber: 'GHA-100200300',
-    reviewer: undefined,
-    reviewedAt: undefined
-  },
-  collectionSummary: {
-    openCases: 0,
-    lastBucket: undefined,
-    lastStatus: undefined,
-    lastActionAt: undefined
+    gps: '6.6906, -1.6209',
+    blacklisted: false,
+    loanSummary: { totalLoans: 1, activeLoans: 0, outstandingAmount: 0, lastLoanId: 'LN202510180088', lastStatus: '拒绝', lastSubmittedAt: '2025-10-18 15:33:42', repeat: false },
+    device: { deviceId: 'device-new-01', platform: 'ios', appVersion: '1.0.15', lastActiveAt: '2025-10-19 21:30', privacyConsent: false, locationConsent: false },
+    kyc: { status: 'PENDING', docType: 'National ID', docNumber: 'GHA-100200300', reviewer: undefined, reviewedAt: undefined },
+    collectionSummary: { openCases: 0, lastBucket: undefined, lastStatus: undefined, lastActionAt: undefined }
   }
-}
-};
-
-export const disbursementsMock: DisbursementRecord[] = [
-  {
-    reqNo: 'REQ-001',
-    loanId: 'LN202510200001',
-    amount: 150,
-    channel: 'mock-channel',
-    status: 'SUCCESS',
-    createdAt: '2025-10-20 08:10:00',
-    updatedAt: '2025-10-20 08:12:00',
-    failureReason: undefined,
-    account: { bank: 'MockBank', accountName: 'Chiamaka', accountNumber: '1234567890' }
-  },
-  {
-    reqNo: 'REQ-002',
-    loanId: 'LN202510190031',
-    amount: 550,
-    channel: 'mock-channel',
-    status: 'FAILED',
-    createdAt: '2025-10-19 22:30:00',
-    updatedAt: '2025-10-19 22:35:00',
-    failureReason: '银行返回限额',
-    account: { bank: 'MockBank', accountName: 'Nancy', accountNumber: '222333444' }
-  }
-];
-
-export const repaymentsMock: RepaymentRecord[] = [
-  {
-    repaymentId: 'RP-001',
-    loanId: 'LN202510200001',
-    amount: 50,
-    currency: 'GHS',
-    channel: 'MOMO',
-    status: 'POSTED',
-    txnRef: 'TXN-001',
-    appliedAmount: 50,
-    remainingDue: 100,
-    paidAt: '2025-10-21 09:00:00',
-    createdAt: '2025-10-21 09:00:00'
-  }
-];
-
-export const reconciliationsMock: ReconciliationRecord[] = [
-  { entryId: 'LE-001', refType: 'DISBURSEMENT', refId: 'LN202510200001', status: 'POSTED', lineCount: 2, createdAt: '2025-10-20 08:11:00' },
-  { entryId: 'LE-002', refType: 'REPAYMENT', refId: 'LN202510200001', status: 'POSTED', lineCount: 2, createdAt: '2025-10-21 09:00:00' }
-];
-export const opsProductsMock: OpsProductConfig[] = [
-  {
-    productId: 'P-PLUS-01',
-    name: 'InsCash Plus',
-    minAmount: 150,
-    maxAmount: 1500,
-    termOptions: '7D / 14D',
-    apr: 18.5,
-    allowExtension: true,
-    status: '启用'
-  },
-  {
-    productId: 'P-MAX-01',
-    name: 'InsCash Max',
-    minAmount: 500,
-    maxAmount: 5000,
-    termOptions: '30D / 45D / 60D',
-    apr: 22.3,
-    allowExtension: true,
-    status: '启用'
-  },
-  {
-    productId: 'P-EXP-01',
-    name: 'InsCash Express',
-    minAmount: 50,
-    maxAmount: 300,
-    termOptions: '7D',
-    apr: 15.2,
-    allowExtension: false,
-    status: '停用'
-  }
-];
-
-export const gradeConfigsMock: GradeConfig[] = [
-  { grade: 'Level 1', maxCredit: 300, interestDiscount: 0, autoUpgradeDays: 45, rules: ['注册完成', 'KYC 提交'] },
-  { grade: 'Level 2', maxCredit: 800, interestDiscount: 5, autoUpgradeDays: 30, rules: ['成功还款 ≥1 次'] },
-  { grade: 'Level 3', maxCredit: 1500, interestDiscount: 10, autoUpgradeDays: 20, rules: ['成功还款 ≥3 次', '无逾期'] },
-  { grade: 'Level 4', maxCredit: 2500, interestDiscount: 15, autoUpgradeDays: 15, rules: ['复借 5 次以上', '无逾期'] }
-];
-
-export const channelLinksMock: ChannelLinkConfig[] = [
-  {
-    id: 'CH-AD-GG',
-    name: 'Google Ads Ghana',
-    channel: 'Google',
-    status: '上线',
-    conversion: 12.5,
-    budget: 1200,
-    updatedAt: '2025-10-20 10:05'
-  },
-  {
-    id: 'CH-AD-FB',
-    name: 'Facebook Lookalike',
-    channel: 'Facebook',
-    status: '上线',
-    conversion: 9.8,
-    budget: 900,
-    updatedAt: '2025-10-19 22:10'
-  },
-  {
-    id: 'CH-AFF-001',
-    name: 'Affiliate Network',
-    channel: 'Affiliate',
-    status: '停用',
-    conversion: 3.2,
-    budget: 500,
-    updatedAt: '2025-10-18 18:30'
-  }
-];
-
-export const messageTemplatesMock: MessageTemplateConfig[] = [
-  {
-    id: 'MSG-OTP',
-    name: '验证码短信',
-    channel: 'SMS',
-    active: true,
-    preview: '您的验证码为 {code}，5 分钟内有效。',
-    variables: ['code']
-  },
-  {
-    id: 'MSG-DUE',
-    name: '到期提醒 WhatsApp',
-    channel: 'WhatsApp',
-    active: true,
-    preview: '{name}，您 {dueDate} 到期的账单金额 {amount}，请及时还款。',
-    variables: ['name', 'dueDate', 'amount']
-  },
-  {
-    id: 'MSG-PROMO',
-    name: '复借优惠 Push',
-    channel: 'Push',
-    active: false,
-    preview: '完成上一笔还款即可获得 {discount}% 利率优惠！',
-    variables: ['discount']
-  }
-];
-
-export const approvalRulesMock: ApprovalRuleConfig[] = [
-  {
-    id: 'RULE-001',
-    name: '高风险地区自动拒绝',
-    stage: '机审',
-    condition: '定位命中黑名单区域',
-    action: '自动拒绝',
-    owner: 'RiskOps',
-    updatedAt: '2025-10-19 12:15'
-  },
-  {
-    id: 'RULE-002',
-    name: '大额人工复核',
-    stage: '人审',
-    condition: '额度 > 2000 或重复申请≤7天',
-    action: '转人工队列',
-    owner: 'LoanOps',
-    updatedAt: '2025-10-18 19:22'
-  },
-  {
-    id: 'RULE-003',
-    name: '质量抽检',
-    stage: '人审',
-    condition: '随机 5% 通过单',
-    action: '指派质检员',
-    owner: 'QA Team',
-    updatedAt: '2025-10-16 09:10'
-  }
-];
-
-export const reportCenterMock: ReportCenterData = {
-  summary: [
-    { label: '当日申请', value: '1,287', delta: 5, description: '较昨日 +5%' },
-    { label: '放款金额 (GHS)', value: '425,000', delta: 8, description: '较昨日 +8%' },
-    { label: '首逾率 (D0)', value: '38%', delta: -2, description: '较昨日 -2pp' },
-    { label: '复借率', value: '28%', delta: 3, description: '较昨日 +3pp' }
-  ],
-  overdueMigration: [
-    { stage: 'D0→D1', todayRate: 38, yesterdayRate: 40, change: -2, note: '新客批次质量改善' },
-    { stage: 'D1→D7', todayRate: 21, yesterdayRate: 22, change: -1, note: 'PTP 回收力度待提升' },
-    { stage: 'D7→D15', todayRate: 12, yesterdayRate: 11, change: 1, note: 'D7 案件堆积' },
-    { stage: 'D15+', todayRate: 7, yesterdayRate: 6, change: 1, note: '需触发外包策略' }
-  ],
-  channelFunnel: [
-    { channel: 'Google Ads', installs: 820, regs: 410, applies: 287, disburses: 145, conversion: 17.7 },
-    { channel: 'Facebook Ads', installs: 690, regs: 330, applies: 210, disburses: 104, conversion: 15.1 },
-    { channel: 'Affiliate', installs: 320, regs: 98, applies: 70, disburses: 31, conversion: 9.7 }
-  ],
-  reborrowRates: [
-    { segment: '高价值用户 (Level4+)', rate: 41, change: 2, volume: 380 },
-    { segment: '标准用户 (Level2-3)', rate: 24, change: 1, volume: 610 },
-    { segment: '新客', rate: 6, change: 0, volume: 297 }
-  ],
-  filters: {
-    businessDate: '2025-10-20',
-    channel: null,
-    product: null
-  },
-  lastUpdated: '2025-10-20 09:45:00',
-  notes: [
-    '昨日渠道预算压缩 8%，今日 Google Ads 投放恢复后放款金额回升。',
-    'D7→D15 档案件增加，需要与催收团队同步加强 PTP 跟进。',
-    '复借用户贡献 63% 放款金额，建议继续保持复借 push 节奏。'
-  ]
 };
 
 import type { AdminRole } from '../constants/roles';

@@ -98,10 +98,20 @@
 - 文档/sample 更新：`README.md`、`README.vibe.md` 说明 M2 功能；`apps/bff-admin/sample.http` 增加 dashboard/daily APIs 及导出示例；`整体开发计划.md` 标记 M2 进度。
 
 ### admin-web（T19 · M3 申请列表 & 详情）
-- `Applications` 页面升级：React Query + Zustand 持久化筛选（手机号/贷款编号/时间/渠道/状态/App 版本/复借标记），导出按钮触发 `/admin/v1/applications/export`，列表新增状态色、App 版本、复借标签与金额格式化。
-- `ApplicationDetail` 拆为“贷款信息+客户画像+审批摘要+审批时间线+历史记录+凭证”多区块，展示命中原因、风险评分、文档下载、设备与客户字段（SIM、证件、GPS），并沿用 `maskPhone` 等工具函数。
-- 新增 `services/api.exportApplications`、`utils/format.ts`（mask/currency）及对应 Vitest，mock 数据同步扩展字段与 `applicationDetailsMock`。
-- 文档/示例同步：`README.md`、`README.vibe.md`、`apps/bff-admin/sample.http`、`临时文件`、`整体开发计划.md`，方便后续 BFF 对接。
+- `Applications` 页面升级：全面对接 bff-admin `/admin/v1/auth|applications`，React Query + Zustand 持久化筛选（贷款编号/关键字/手机号/时间/渠道/产品/状态/App 版本/复借），增加批量选中后触发批量导出/复核的交互提示，并显示剩余本金、风险评分、上次还款等字段。
+- `ApplicationDetail` 拆分为“概览（含指标卡）+贷款信息+还款概览+客户画像+审批摘要+审批流程+历史+凭证”多 Tab，展示 BFF 返回的剩余本金、原始金额、风险评分、命中原因以及下载链接。
+- `services/api.ts`、`mocks/data.ts` 对齐 BFF 字段（productId/outstandingAmount/lastPaidAt 等），Status/Tag 渲染逻辑同步更新；Vitest 持续覆盖格式化/Sidebar 用例。
+- bff-admin 新增可配置筛选参数（startDate/endDate/product/channel/repeat 等）与合成字段（phone/channel/level），pytest 用例补充 repeat/date 过滤，README/临时文件同步说明。
+
+### admin-web（T19 · M4 Borrower 360 档案）
+- bff-admin `/admin/v1/users/{userId}` 聚合 user-svc、loan-svc、collection-svc，输出 `loanSummary`、`device`、`kyc`、`collectionSummary` 等结构，pytest 新增用户档案断言。
+- admin-web `UserProfile` 重构为 Borrower 360：顶部指标卡 + 身份/贷款/催收/风控/KYC/设备多卡片，展示剩余本金、活跃贷款、授权状态及标签。
+- `mocks/data.ts`、`README.md` 同步新字段说明；执行 `pytest` 与 `npm run test -- --passWithNoTests` 验证。
+
+### admin-web（T19 · M5 财务放/还款对账）
+- bff-admin 新增 `/admin/v1/finance/disbursements|repayments|reconciliations`，聚合 payment.db/ledger.db 多维筛选，提供分页与 pytest 覆盖。
+- admin-web `/finance` 页面以 Tabs 呈现放款/还款/对账明细，具备多条件筛选、批量导出提示及金额格式化。
+- `services/api.ts`、`mocks/data.ts` 补充财务相关类型与 fallback，README/临时文件同步说明，执行 `pytest` 与 `npm run test -- --passWithNoTests`。
 
 ### admin-web（T19 · M4 借款人档案 & 审批四 Tab）
 - `applicationDetailsMock` / `userProfilesMock` 补齐 KYC、设备、隐私授权、渠道轨迹、历史借还等字段；ApplicationDetail 拆分 `BorrowerProfileTab/ApprovalTimelineTab/HistoryTab/DocumentsTab`，新增“借款人档案”视图并沿用 React Query Skeleton/错误处理。
