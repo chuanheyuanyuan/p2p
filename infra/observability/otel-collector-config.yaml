@@ -1,0 +1,26 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+exporters:
+  file:
+    path: ./infra/observability/otel-data/collector.log
+processors:
+  batch:
+  memory_limiter:
+    limit_mib: 256
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [file]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [file]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [file]
