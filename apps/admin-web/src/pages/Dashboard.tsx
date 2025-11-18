@@ -1,8 +1,10 @@
 import { Alert, Button, Card, Col, Progress, Row, Skeleton, Space, Statistic, Typography } from 'antd';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { fetchDashboardOverview } from '../services/api';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const { data, isPending, isFetching, error, refetch } = useQuery({
     queryKey: ['dashboard-overview'],
     queryFn: fetchDashboardOverview,
@@ -25,6 +27,19 @@ const Dashboard = () => {
           }
         />
       )}
+      <Card>
+        <Space align="center" style={{ width: '100%', justifyContent: 'space-between' }} wrap>
+          <div>
+            <Typography.Title level={5} style={{ margin: 0 }}>
+              报表中心
+            </Typography.Title>
+            <Typography.Text type="secondary">查看渠道漏斗、复借率与逾期迁移率等指标</Typography.Text>
+          </div>
+          <Button type="primary" onClick={() => navigate('/report-center')}>
+            前往报表中心
+          </Button>
+        </Space>
+      </Card>
       <Row gutter={16} wrap>
         {(loading ? Array.from({ length: 4 }) : data?.kpis ?? []).map((kpi, index) => (
           <Col xs={24} sm={12} lg={6} key={kpi?.label ?? index}>

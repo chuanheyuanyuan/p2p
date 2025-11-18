@@ -518,6 +518,43 @@ export const dailyStatsMock: DailyStat[] = [
   { date: '2025-10-16', installs: 226, regs: 6, logins: 9, applies: 187, disburses: 121, repayments: 121, amount: 48090 }
 ];
 
+export const reportCenterMock: ReportCenterData = {
+  summary: [
+    { label: '放款金额', value: '₵188,500', delta: 2.4, description: '环比昨日' },
+    { label: '放款笔数', value: '1,120', delta: 1.1, description: '环比昨日' },
+    { label: '逾期率 (D1+)', value: '38.1%', delta: -1.6, description: '较昨日' },
+    { label: '复借率', value: '27.8%', delta: 0.8, description: '相较上周' }
+  ],
+  overdueMigration: [
+    { stage: 'D0->D1', todayRate: 19.2, yesterdayRate: 20.3, change: -1.1, note: '短信策略更新' },
+    { stage: 'D1->D7', todayRate: 12.1, yesterdayRate: 13.4, change: -1.3, note: '外呼团队扩容' },
+    { stage: 'D7->D15', todayRate: 8.6, yesterdayRate: 8.2, change: 0.4, note: '新激励上线' },
+    { stage: 'D15->D30', todayRate: 5.1, yesterdayRate: 5.5, change: -0.4 }
+  ],
+  channelFunnel: [
+    { channel: 'Google Ads', installs: 1820, regs: 612, applies: 410, disburses: 165, conversion: 9.1 },
+    { channel: 'Facebook Ads', installs: 1540, regs: 580, applies: 385, disburses: 142, conversion: 9.2 },
+    { channel: 'Affiliate', installs: 730, regs: 220, applies: 140, disburses: 58, conversion: 7.9 },
+    { channel: '线下地推', installs: 210, regs: 120, applies: 96, disburses: 62, conversion: 12.4 }
+  ],
+  reborrowRates: [
+    { segment: '高价值用户', rate: 42.5, change: 1.8, volume: 860 },
+    { segment: '一般用户', rate: 24.1, change: 0.6, volume: 3120 },
+    { segment: '风险观察', rate: 9.5, change: -0.4, volume: 780 }
+  ],
+  filters: {
+    businessDate: '2025-10-20',
+    channel: null,
+    product: null
+  },
+  lastUpdated: '2025-10-20 09:30:00',
+  notes: [
+    'D1 阶段逾期迁移率环比下降 1.1pp，Call list 扩容带动首逾控制改善。',
+    'Facebook Ads 裂变活动带来 18% 新客增量，放款转化率稳定在 9% 左右。',
+    '复借重点人群单客贡献占比 42%，建议继续投放授信升级 push。'
+  ]
+};
+
 export const adminAccountsMock: AdminAccount[] = [
   {
     id: 'staff-ops-01',

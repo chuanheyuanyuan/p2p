@@ -145,6 +145,11 @@
 - Admin Web `Collections` 页面完成案件池统计卡、查询表单（Bucket/状态/催收员）、Drawer 工作台、跟进/PTP 表单与 React Query 联动，实际调用 `fetchCollectionStats`、`createCollectionAction` 并在成功后刷新列表/详情缓存。
 - README（apps/admin-web）补充 Finance/Collections 能力说明，`pytest services/bff-admin/tests/test_bff_admin.py` 与 `npm run test -- --passWithNoTests` 均通过，PROGRESS/整体开发计划同步记录 Sprint 10 里程碑。
 
+### Sprint 11（报表中心串联）
+- Admin Web `/report-center` 页面完善：mock 层新增 `reportCenterMock`（KPI、逾期迁移、渠道漏斗、复借率、分析备注）并接入 `fetchReportCenter`/`exportReportCenter` fallback，默认业务日期 2025-10-20。
+- Dashboard 增加 “报表中心” 卡片入口，可一键跳转并提示渠道/复借指标内容；README 更新现状描述，确保分析角色知晓两处入口。
+- `npm run test -- --passWithNoTests` 验证 React 代码，PROGRESS 记录 Sprint11 交付，准备与后端 `/admin/v1/reports/center` 契约对齐。
+
 ## 运行提示与偏好
 - 所有服务都需在对应目录下 `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`。
 - Python 3.9 不支持 `| None`，请使用 `Optional[...]` 并导入 `typing.Optional`。
