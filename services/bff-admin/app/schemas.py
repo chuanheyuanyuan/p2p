@@ -119,6 +119,40 @@ class PaginatedApplications(BaseModel):
     total: int
 
 
+class BorrowerLoanSummary(BaseModel):
+    totalLoans: int = 0
+    activeLoans: int = 0
+    outstandingAmount: Optional[Decimal] = None
+    lastLoanId: Optional[str] = None
+    lastStatus: Optional[str] = None
+    lastSubmittedAt: Optional[str] = None
+    repeat: bool = False
+
+
+class BorrowerDeviceInfo(BaseModel):
+    deviceId: Optional[str] = None
+    platform: Optional[str] = None
+    appVersion: Optional[str] = None
+    lastActiveAt: Optional[str] = None
+    privacyConsent: bool = False
+    locationConsent: bool = False
+
+
+class BorrowerKycInfo(BaseModel):
+    status: str = 'UNKNOWN'
+    docType: Optional[str] = None
+    docNumber: Optional[str] = None
+    reviewer: Optional[str] = None
+    reviewedAt: Optional[str] = None
+
+
+class BorrowerCollectionSummary(BaseModel):
+    openCases: int = 0
+    lastBucket: Optional[str] = None
+    lastStatus: Optional[str] = None
+    lastActionAt: Optional[str] = None
+
+
 class UserProfile(BaseModel):
     userId: str
     name: str
@@ -134,6 +168,10 @@ class UserProfile(BaseModel):
     address: Optional[str] = None
     gps: Optional[str] = None
     blacklisted: bool = False
+    loanSummary: Optional[BorrowerLoanSummary] = None
+    device: Optional[BorrowerDeviceInfo] = None
+    kyc: Optional[BorrowerKycInfo] = None
+    collectionSummary: Optional[BorrowerCollectionSummary] = None
 
 
 class CollectionCaseItem(BaseModel):

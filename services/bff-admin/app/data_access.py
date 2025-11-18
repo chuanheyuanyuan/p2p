@@ -384,20 +384,68 @@ def get_collection_case(settings: Settings, case_id: str) -> Optional[dict]:
 def get_user_profile(settings: Settings, user_id: str) -> dict:
     device = get_latest_device(str(settings.user_db_path), user_id)
     kyc = get_user_kyc(str(settings.user_db_path), user_id)
+    loans, _ = list_applications(
+        settings,
+        user_id=user_id,
+        page=1,
+        page_size=settings.max_application_rows,
+        limit=settings.max_application_rows,
+    )
+    outstanding_total = Decimal('0')
+    active_loans = 0
+    for loan in loans:
+        outstanding_total += loan.get('outstandingAmount') or Decimal('0')
+        if loan['status'] not in ('AUTO_REJECTED', 'REPAID', 'DRAFT'):
+            active_loans += 1
+    last_loan = loans[0] if loans else None
+    loan_summary = {
+        'totalLoans': len(loans),
+        'activeLoans': active_loans,
+        'outstandingAmount': outstanding_total,
+        'lastLoanId': last_loan['id'] if last_loan else None,
+        'lastStatus': STATUS_LABELS.get(last_loan['status'], last_loan['status']) if last_loan else None,
+        'lastSubmittedAt': last_loan['createdAt'] if last_loan else None,
+        'repeat': len(loans) > 1,
+    }
+    device_info = None
+    if device:
+        device_info = {
+            'deviceId': device.get('device_id'),
+            'platform': device.get('platform'),
+            'appVersion': device.get('app_version'),
+            'lastActiveAt': device.get('last_active_at'),
+            'privacyConsent': bool(device.get('privacy_consent')),
+            'locationConsent': bool(device.get('location_consent')),
+        }
+    kyc_info = None
+    if kyc:
+        kyc_info = {
+            'status': kyc.get('kyc_status', 'UNKNOWN'),
+            'docType': kyc.get('doc_type'),
+            'docNumber': kyc.get('doc_number'),
+            'reviewer': kyc.get('reviewer'),
+            'reviewedAt': kyc.get('reviewed_at'),
+        }
+    collection_summary = _get_collection_summary(settings, user_id)
+
     tags: List[str] = []
     risk_flags: List[str] = []
     if kyc and kyc.get('kyc_status') != 'APPROVED':
         risk_flags.append('KYC_PENDING')
-    if device and device.get('privacy_consent') == 1:
+    if outstanding_total > Decimal('0'):
+        risk_flags.append('OUTSTANDING_BALANCE')
+    if device_info and device_info.get('privacyConsent'):
         tags.append('已授权')
+    if loan_summary['repeat']:
+        tags.append('复借用户')
     return {
         'userId': user_id,
         'name': f'Borrower {user_id}',
         'gender': None,
         'phone': None,
         'email': None,
-        'level': 'Level1',
-        'kycStatus': kyc['kyc_status'] if kyc else 'UNKNOWN',
+        'level': loan_summary['repeat'] and 'Level2' or 'Level1',
+        'kycStatus': kyc.get('kyc_status') if kyc else 'UNKNOWN',
         'registerDate': device['created_at'] if device else None,
         'lastLogin': device['last_active_at'] if device else None,
         'tags': tags,
@@ -405,4 +453,34 @@ def get_user_profile(settings: Settings, user_id: str) -> dict:
         'address': None,
         'gps': None,
         'blacklisted': bool(kyc and kyc.get('kyc_status') == 'REJECTED'),
+        'loanSummary': loan_summary,
+        'device': device_info,
+        'kyc': kyc_info,
+        'collectionSummary': collection_summary,
+    }
+
+
+def _get_collection_summary(settings: Settings, user_id: str) -> dict:
+    conn = _open_connection(settings.collection_db_path)
+    if conn is None:
+        return {'openCases': 0, 'lastBucket': None, 'lastStatus': None, 'lastActionAt': None}
+    try:
+        rows = conn.execute(
+            'SELECT bucket, status, updated_at, created_at FROM collection_cases WHERE user_id = ? ORDER BY updated_at DESC',
+            (user_id,),
+        ).fetchall()
+    except sqlite3.Error:
+        conn.close()
+        return {'openCases': 0, 'lastBucket': None, 'lastStatus': None, 'lastActionAt': None}
+    finally:
+        conn.close()
+    if not rows:
+        return {'openCases': 0, 'lastBucket': None, 'lastStatus': None, 'lastActionAt': None}
+    open_cases = sum(1 for row in rows if row['status'] not in ('PAID', 'CLOSED', 'RESOLVED'))
+    latest = rows[0]
+    return {
+        'openCases': open_cases,
+        'lastBucket': latest['bucket'],
+        'lastStatus': latest['status'],
+        'lastActionAt': latest['updated_at'] or latest['created_at'],
     }

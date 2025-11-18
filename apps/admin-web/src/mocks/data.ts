@@ -227,21 +227,59 @@ export interface ReleaseNote {
   highlight: string;
 }
 
+export interface BorrowerLoanSummary {
+  totalLoans: number;
+  activeLoans: number;
+  outstandingAmount?: number;
+  lastLoanId?: string;
+  lastStatus?: string;
+  lastSubmittedAt?: string;
+  repeat?: boolean;
+}
+
+export interface BorrowerDeviceInfo {
+  deviceId?: string;
+  platform?: string;
+  appVersion?: string;
+  lastActiveAt?: string;
+  privacyConsent?: boolean;
+  locationConsent?: boolean;
+}
+
+export interface BorrowerKycInfo {
+  status: string;
+  docType?: string;
+  docNumber?: string;
+  reviewer?: string;
+  reviewedAt?: string;
+}
+
+export interface BorrowerCollectionSummary {
+  openCases: number;
+  lastBucket?: string;
+  lastStatus?: string;
+  lastActionAt?: string;
+}
+
 export interface UserProfile {
   userId: string;
   name: string;
-  gender: string;
-  phone: string;
-  email: string;
+  gender?: string;
+  phone?: string;
+  email?: string;
   level: string;
   kycStatus: string;
-  registerDate: string;
-  lastLogin: string;
+  registerDate?: string;
+  lastLogin?: string;
   tags: string[];
   riskFlags: string[];
-  address: string;
-  gps: string;
+  address?: string;
+  gps?: string;
   blacklisted: boolean;
+  loanSummary?: BorrowerLoanSummary;
+  device?: BorrowerDeviceInfo;
+  kyc?: BorrowerKycInfo;
+  collectionSummary?: BorrowerCollectionSummary;
 }
 
 export interface AdminAccount {
@@ -760,10 +798,40 @@ export const userProfilesMock: Record<string, UserProfile> = {
     lastLogin: '2025-10-20 07:55',
     tags: ['复借', '高价值'],
     riskFlags: ['设备可信'],
-    address: 'Accra, Ghana',
-    gps: '5.6037, -0.1870',
-    blacklisted: false
+  address: 'Accra, Ghana',
+  gps: '5.6037, -0.1870',
+  blacklisted: false,
+  loanSummary: {
+    totalLoans: 4,
+    activeLoans: 2,
+    outstandingAmount: 320,
+    lastLoanId: 'LN202510200001',
+    lastStatus: '通过',
+    lastSubmittedAt: '2025-10-20 08:06:08',
+    repeat: true
   },
+  device: {
+    deviceId: 'device-ops-01',
+    platform: 'android',
+    appVersion: '1.0.17',
+    lastActiveAt: '2025-10-20 07:55',
+    privacyConsent: true,
+    locationConsent: false
+  },
+  kyc: {
+    status: 'APPROVED',
+    docType: 'National ID',
+    docNumber: 'GHA-718571472-2',
+    reviewer: 'KYC Bot',
+    reviewedAt: '2025-10-18 10:00:00'
+  },
+  collectionSummary: {
+    openCases: 1,
+    lastBucket: 'D7',
+    lastStatus: 'OPEN',
+    lastActionAt: '2025-10-20 09:30:00'
+  }
+},
   U10002: {
     userId: 'U10002',
     name: 'Nancy Agyapomaa Osei',
@@ -777,9 +845,39 @@ export const userProfilesMock: Record<string, UserProfile> = {
     tags: ['社交渠道'],
     riskFlags: ['通讯录稀疏'],
     address: 'Ashanti Bantama BA 52',
-    gps: '6.6021, -1.6246',
-    blacklisted: false
+  gps: '6.6021, -1.6246',
+  blacklisted: false,
+  loanSummary: {
+    totalLoans: 2,
+    activeLoans: 2,
+    outstandingAmount: 550,
+    lastLoanId: 'LN202510190031',
+    lastStatus: '审核中',
+    lastSubmittedAt: '2025-10-19 22:14:09',
+    repeat: false
   },
+  device: {
+    deviceId: 'device-ops-02',
+    platform: 'android',
+    appVersion: '1.0.16',
+    lastActiveAt: '2025-10-20 08:03',
+    privacyConsent: true,
+    locationConsent: true
+  },
+  kyc: {
+    status: 'APPROVED',
+    docType: 'Passport',
+    docNumber: 'P0021882',
+    reviewer: 'Nancy QA',
+    reviewedAt: '2025-10-15 12:00:00'
+  },
+  collectionSummary: {
+    openCases: 0,
+    lastBucket: undefined,
+    lastStatus: undefined,
+    lastActionAt: undefined
+  }
+},
   U10003: {
     userId: 'U10003',
     name: 'Samuel Asiedu Adu',
@@ -793,9 +891,39 @@ export const userProfilesMock: Record<string, UserProfile> = {
     tags: ['新客'],
     riskFlags: ['设备更换频繁'],
     address: 'Kumasi, Ghana',
-    gps: '6.6906, -1.6209',
-    blacklisted: false
+  gps: '6.6906, -1.6209',
+  blacklisted: false,
+  loanSummary: {
+    totalLoans: 1,
+    activeLoans: 0,
+    outstandingAmount: 0,
+    lastLoanId: 'LN202510180088',
+    lastStatus: '拒绝',
+    lastSubmittedAt: '2025-10-18 15:33:42',
+    repeat: false
+  },
+  device: {
+    deviceId: 'device-new-01',
+    platform: 'ios',
+    appVersion: '1.0.15',
+    lastActiveAt: '2025-10-19 21:30',
+    privacyConsent: false,
+    locationConsent: false
+  },
+  kyc: {
+    status: 'PENDING',
+    docType: 'National ID',
+    docNumber: 'GHA-100200300',
+    reviewer: undefined,
+    reviewedAt: undefined
+  },
+  collectionSummary: {
+    openCases: 0,
+    lastBucket: undefined,
+    lastStatus: undefined,
+    lastActionAt: undefined
   }
+}
 };
 import type { AdminRole } from '../constants/roles';
 import type { LoginResponse } from '../types/auth';

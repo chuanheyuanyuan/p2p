@@ -275,7 +275,13 @@ def test_applications_and_users(client):
 
     user_resp = client.get('/admin/v1/users/U1', headers=headers)
     assert user_resp.status_code == 200
-    assert user_resp.json()['userId'] == 'U1'
+    profile = user_resp.json()
+    assert profile['userId'] == 'U1'
+    assert profile['loanSummary']['activeLoans'] == 2
+    assert float(profile['loanSummary']['outstandingAmount']) == 250.0
+    assert profile['device']['platform'] == 'android'
+    assert profile['kyc']['status'] == 'APPROVED'
+    assert profile['collectionSummary']['openCases'] == 1
 
 
 def test_collections_and_reports(client):
