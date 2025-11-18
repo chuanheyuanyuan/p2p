@@ -39,7 +39,8 @@ src/
 - 申请管理：支持手机号/贷款编号/时间/渠道/状态等多维筛选，筛选条件使用 Zustand 持久化，导出按钮会创建异步任务。
 - 申请详情：客户信息/审批摘要/审批时间线/历史记录/凭证五区块，展示借款人画像、设备、命中原因、审批轨迹与文档下载。
 - 用户档案：Borrower 360 视图，覆盖身份信息、贷款/还款概览、KYC 记录、设备授权、催收状态、标签/风险提示等。
-- 催收工作台：案件列表、Drawer 工作台、PTP/外呼/跟进表单，支持本地记录。
+- 催收工作台：案件池统计卡 + 案件列表 + Drawer 工作台，跟进/PTP 表单 已接入 `/admin/v1/collections/cases|stats` 与动作 API，支持状态流转、PTP 记录和 React Query 缓存刷新。
+- Finance 中心：`/finance` 页面聚合 `/admin/v1/finance/disbursements|repayments|reconciliations`，提供条件筛选、分页与 mock fallback，方便催收/财务对账。
 - Dashboard：接入 `/admin/v1/dashboard`（mock fallback），展示 KPI、逾期概览、催回进度、今日指标、新客转化率，支持错误提示与重试。
 - Daily Stats：对接 `/admin/v1/reports/daily`，提供时间/渠道/复借筛选、指标汇总、导出任务触发。
 - Ops Config / App 升级等基础页面。

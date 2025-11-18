@@ -77,6 +77,7 @@ class Settings(BaseSettings):
     collection_db_path: Path = Field(default=SERVICES_DIR / 'collection-svc' / 'collection.db')
     user_db_path: Path = Field(default=SERVICES_DIR / 'user-svc' / 'user.db')
     max_application_rows: int = 1000
+    ledger_db_path: Path = Field(default=SERVICES_DIR / 'ledger-svc' / 'ledger.db')
 
 @lru_cache
 def get_settings() -> Settings:

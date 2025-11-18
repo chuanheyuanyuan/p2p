@@ -17,12 +17,14 @@ def client(tmp_path, monkeypatch):
     user_db = tmp_path / 'user.db'
     collection_db = tmp_path / 'collection.db'
     payment_db = tmp_path / 'payment.db'
+    ledger_db = tmp_path / 'ledger.db'
     products_path = tmp_path / 'products.json'
 
     _seed_loan_db(loan_db)
     _seed_user_db(user_db)
     _seed_collection_db(collection_db)
     _seed_payment_db(payment_db)
+    _seed_ledger_db(ledger_db)
     products_path.write_text(
         '[{"productId":"P_BASIC","name":"InsCash Basic"},{"productId":"P_MAX","name":"InsCash Max"}]',
         encoding='utf-8',
@@ -32,6 +34,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv('BFF_ADMIN_USER_DB_PATH', str(user_db))
     monkeypatch.setenv('BFF_ADMIN_COLLECTION_DB_PATH', str(collection_db))
     monkeypatch.setenv('BFF_ADMIN_PAYMENT_DB_PATH', str(payment_db))
+    monkeypatch.setenv('BFF_ADMIN_LEDGER_DB_PATH', str(ledger_db))
 
     import app.config as config
 
@@ -87,7 +90,7 @@ def _seed_loan_db(path: Path) -> None:
     conn.executemany('INSERT INTO loan_applications VALUES (?,?,?,?,?,?,?,?,?,?)', rows)
     schedules = [
         ('LN123', 'GHS', '500', '250', '250', 'ACTIVE', now, now, now),
-        ('LN124', 'GHS', '800', '800', '0', 'REPAID', earlier, now, earlier),
+        ('LN124', 'GHS', '800', '0', '800', 'REPAID', earlier, now, earlier),
         ('LN777', 'GHS', '1000', '1000', '0', 'ACTIVE', now, now, None),
     ]
     conn.executemany(
@@ -199,8 +202,16 @@ def _seed_collection_db(path: Path) -> None:
         ('CASE1', 'LN123', 'U1', 'D7', '250', 'GHS', 'OPEN', 'collector-1', now, now, 'CALL', '250', now, None, None),
     )
     conn.execute(
+        'INSERT INTO collection_cases VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        ('CASE2', 'LN124', 'U3', 'D30', '800', 'GHS', 'PAID', 'collector-2', now, now, 'SMS', None, None, now, None),
+    )
+    conn.execute(
         'INSERT INTO collection_actions VALUES (?,?,?,?,?,?,?,?,?)',
         ('ACT1', 'CASE1', 'CALL', 'collector-1', '提醒', 'PTP', '250', now, now),
+    )
+    conn.execute(
+        'INSERT INTO collection_actions VALUES (?,?,?,?,?,?,?,?,?)',
+        ('ACT2', 'CASE2', 'SMS', 'collector-2', '催收', None, None, None, now),
     )
     conn.commit()
     conn.close()
@@ -254,6 +265,30 @@ def _seed_payment_db(path: Path) -> None:
     conn.close()
 
 
+def _seed_ledger_db(path: Path) -> None:
+    conn = sqlite3.connect(path)
+    conn.execute(
+        '''
+        CREATE TABLE ledger_entries (
+            entry_id TEXT PRIMARY KEY,
+            ref_type TEXT,
+            ref_id TEXT,
+            status TEXT,
+            lines_json TEXT,
+            created_at TEXT
+        )
+        '''
+    )
+    now = datetime.utcnow().isoformat()
+    entries = [
+        ('LE-1', 'DISBURSEMENT', 'LN123', 'POSTED', '[{"debit":"cash","credit":"loan"}]', now),
+        ('LE-2', 'REPAYMENT', 'LN123', 'POSTED', '[{"debit":"loan","credit":"cash"}]', now),
+    ]
+    conn.executemany('INSERT INTO ledger_entries VALUES (?,?,?,?,?,?)', entries)
+    conn.commit()
+    conn.close()
+
+
 def _auth_header(client: TestClient) -> dict:
     resp = client.post('/admin/v1/auth/login', json={'username': 'ops.lead', 'password': 'admin123'})
     token = resp.json()['accessToken']
@@ -288,12 +323,39 @@ def test_collections_and_reports(client):
     headers = _auth_header(client)
     cases_resp = client.get('/admin/v1/collections/cases', headers=headers)
     assert cases_resp.status_code == 200
-    assert cases_resp.json()['total'] == 1
+    assert cases_resp.json()['total'] == 2
     case_id = cases_resp.json()['list'][0]['caseId']
 
     case_detail = client.get(f'/admin/v1/collections/cases/{case_id}', headers=headers)
     assert case_detail.status_code == 200
     assert case_detail.json()['summary']['caseId'] == 'CASE1'
+
+    stats_resp = client.get('/admin/v1/collections/stats', headers=headers)
+    assert stats_resp.status_code == 200
+    stats = stats_resp.json()
+    assert stats['totalCases'] == 2
+    assert stats['buckets']['D7'] == 1
+    assert stats['statuses']['OPEN'] == 1
+
+    due_at = datetime.utcnow().date().isoformat() + 'T00:00:00'
+    action_resp = client.post(
+        f'/admin/v1/collections/cases/{case_id}/actions',
+        headers=headers,
+        json={
+            'action': 'WHATSAPP',
+            'result': 'PROMISE',
+            'note': '新PTP',
+            'status': 'PROMISE',
+            'ptpAmount': 180.0,
+            'ptpDueAt': due_at,
+        },
+    )
+    assert action_resp.status_code == 200
+    action_detail = action_resp.json()
+    assert action_detail['summary']['status'] == 'PROMISE'
+    assert action_detail['followUps'][0]['action'] == 'WHATSAPP'
+    assert action_detail['ptpRecords'][0]['amount'] == pytest.approx(180.0)
+    assert action_detail['ptpRecords'][0]['promiseDate'] == due_at
 
     dashboard = client.get('/admin/v1/dashboard', headers=headers)
     assert dashboard.status_code == 200
@@ -320,3 +382,16 @@ def test_application_filters(client):
     future = client.get('/admin/v1/applications', headers=headers, params={'startDate': '2099-01-01', 'endDate': '2099-01-02'})
     assert future.status_code == 200
     assert future.json()['total'] == 0
+
+
+def test_finance_endpoints(client):
+    headers = _auth_header(client)
+    disb = client.get('/admin/v1/finance/disbursements', headers=headers)
+    assert disb.status_code == 200
+    assert disb.json()['total'] == 1
+    repay = client.get('/admin/v1/finance/repayments', headers=headers)
+    assert repay.status_code == 200
+    assert repay.json()['list'][0]['txnRef'] == 'TXN1'
+    recon = client.get('/admin/v1/finance/reconciliations', headers=headers)
+    assert recon.status_code == 200
+    assert recon.json()['total'] == 2

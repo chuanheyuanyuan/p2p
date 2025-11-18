@@ -4,6 +4,7 @@ import {
   DashboardOutlined,
   DatabaseOutlined,
   FileTextOutlined,
+  LineChartOutlined,
   PartitionOutlined,
   SettingOutlined,
   TeamOutlined,
@@ -29,6 +30,7 @@ const analyticsRoles: AdminRole[] = ['super_admin', 'analyst', 'ops_manager'];
 const collectionsRoles: AdminRole[] = ['super_admin', 'collector_manager', 'collector_agent'];
 const opsRoles: AdminRole[] = ['super_admin', 'ops_manager'];
 const channelRoles: AdminRole[] = ['super_admin', 'channel_ops', 'ops_manager'];
+const financeRoles: AdminRole[] = ['super_admin', 'finance'];
 
 export const navSections: NavSection[] = [
   {
@@ -36,6 +38,8 @@ export const navSections: NavSection[] = [
     items: [
       { key: '/', label: '首页', icon: <DashboardOutlined />, roles: allRoles },
       { key: '/daily-stats', label: '数据大盘', icon: <DatabaseOutlined />, roles: analyticsRoles },
+      { key: '/report-center', label: '报表中心', icon: <LineChartOutlined />, roles: analyticsRoles },
+      { key: '/finance', label: '财务对账', icon: <FileTextOutlined />, roles: financeRoles },
       { key: '/applications', label: '申请管理', icon: <FileTextOutlined />, roles: approvalRoles }
     ]
   },
@@ -61,6 +65,8 @@ export const navKeyMap = new Map(navSections.flatMap((section) => section.items.
 export const routeRoleMap: Record<string, AdminRole[]> = {
   '/': allRoles,
   '/daily-stats': analyticsRoles,
+  '/report-center': analyticsRoles,
+  '/finance': financeRoles,
   '/applications': approvalRoles,
   '/applications/:id': approvalRoles,
   '/users/:userId': ['super_admin', 'loan_officer', 'risk_officer', 'collector_manager'],

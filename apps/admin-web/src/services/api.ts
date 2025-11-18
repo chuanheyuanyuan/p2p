@@ -4,8 +4,12 @@ import type {
   ApplicationRecord,
   CollectionCase,
   CollectionCaseDetail,
+  CollectionStats,
   DailyStat,
   DashboardStats,
+  DisbursementRecord,
+  ReconciliationRecord,
+  RepaymentRecord,
   UserProfile
 } from '../mocks/data';
 import {
@@ -13,10 +17,14 @@ import {
   applicationDetailsMock,
   collectionCasesMock,
   collectionDetailsMock,
+  collectionStatsMock,
   adminAccountsMock,
   dashboardMock,
   defaultSessionMock,
   dailyStatsMock,
+  disbursementsMock,
+  reconciliationsMock,
+  repaymentsMock,
   userProfilesMock
 } from '../mocks/data';
 import type { LoginPayload, LoginResponse } from '../types/auth';
@@ -128,6 +136,8 @@ export interface CollectionsQuery {
   pageSize?: number;
   bucket?: string;
   assignee?: string;
+  caseId?: string;
+  status?: string;
 }
 
 export async function fetchCollectionCases(params: CollectionsQuery): Promise<PaginatedResponse<CollectionCase>> {
@@ -154,11 +164,51 @@ export async function fetchCollectionDetail(caseId: string): Promise<CollectionC
   }
 }
 
+export interface CollectionActionPayload {
+  action: string;
+  result?: string;
+  note?: string;
+  status?: string;
+  ptpAmount?: number;
+  ptpDueAt?: string;
+}
+
+export async function createCollectionAction(caseId: string, payload: CollectionActionPayload): Promise<CollectionCaseDetail> {
+  try {
+    return await request(`/admin/v1/collections/cases/${caseId}/actions`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  } catch (error) {
+    console.warn('createCollectionAction fallback', error);
+    return fetchCollectionDetail(caseId);
+  }
+}
+
+export async function fetchCollectionStats(): Promise<CollectionStats> {
+  try {
+    return await request('/admin/v1/collections/stats');
+  } catch (error) {
+    console.warn('fetchCollectionStats fallback', error);
+    return collectionStatsMock;
+  }
+}
+
 export interface DailyStatsQuery {
   startDate?: string;
   endDate?: string;
   channel?: string;
   repeat?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface FinanceQuery {
+  status?: string;
+  channel?: string;
+  loanId?: string;
+  startDate?: string;
+  endDate?: string;
   page?: number;
   pageSize?: number;
 }
@@ -200,5 +250,46 @@ export async function exportDailyStats(params: DailyStatsQuery): Promise<{ taskI
   } catch (error) {
     console.warn('exportDailyStats fallback', error);
     return { taskId: `mock-export-${Date.now()}` };
+  }
+}
+
+function buildSearchParams(params: Record<string, unknown>): string {
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      search.append(key, String(value));
+    }
+  });
+  const query = search.toString();
+  return query ? `?${query}` : '';
+}
+
+export async function fetchDisbursements(params: FinanceQuery): Promise<PaginatedResponse<DisbursementRecord>> {
+  try {
+    const query = buildSearchParams(params);
+    return await request(`/admin/v1/finance/disbursements${query}`);
+  } catch (error) {
+    console.warn('fetchDisbursements fallback', error);
+    return { list: disbursementsMock, total: disbursementsMock.length };
+  }
+}
+
+export async function fetchRepayments(params: FinanceQuery): Promise<PaginatedResponse<RepaymentRecord>> {
+  try {
+    const query = buildSearchParams(params);
+    return await request(`/admin/v1/finance/repayments${query}`);
+  } catch (error) {
+    console.warn('fetchRepayments fallback', error);
+    return { list: repaymentsMock, total: repaymentsMock.length };
+  }
+}
+
+export async function fetchReconciliations(params: { refType?: string; refId?: string; page?: number; pageSize?: number }): Promise<PaginatedResponse<ReconciliationRecord>> {
+  try {
+    const query = buildSearchParams(params);
+    return await request(`/admin/v1/finance/reconciliations${query}`);
+  } catch (error) {
+    console.warn('fetchReconciliations fallback', error);
+    return { list: reconciliationsMock, total: reconciliationsMock.length };
   }
 }

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -215,6 +215,23 @@ class CollectionCaseDetail(BaseModel):
     contact: CollectionContact
     followUps: List[CollectionFollowUp]
     ptpRecords: List[CollectionPTPRecord]
+    ptpDueAt: Optional[str] = None
+    ptpAmount: Optional[float] = None
+
+
+class CollectionActionRequest(BaseModel):
+    action: str
+    result: Optional[str] = None
+    note: Optional[str] = None
+    status: Optional[str] = None
+    ptpAmount: Optional[float] = None
+    ptpDueAt: Optional[str] = None
+
+
+class CollectionStats(BaseModel):
+    totalCases: int
+    buckets: Dict[str, int]
+    statuses: Dict[str, int]
 
 
 class PaginatedCollectionCases(BaseModel):
@@ -287,3 +304,53 @@ class DailyStatsExportResponse(BaseModel):
 
 class ExportResponse(BaseModel):
     taskId: str
+
+
+class DisbursementRecord(BaseModel):
+    reqNo: str
+    loanId: str
+    amount: Decimal
+    channel: str
+    status: str
+    failureReason: Optional[str] = None
+    createdAt: str
+    updatedAt: str
+    account: dict
+
+
+class RepaymentRecord(BaseModel):
+    repaymentId: str
+    loanId: str
+    amount: Decimal
+    currency: str
+    channel: str
+    status: str
+    txnRef: str
+    appliedAmount: Decimal
+    remainingDue: Decimal
+    paidAt: str
+    createdAt: str
+
+
+class ReconciliationRecord(BaseModel):
+    entryId: str
+    refType: str
+    refId: str
+    status: str
+    lineCount: int
+    createdAt: str
+
+
+class PaginatedDisbursements(BaseModel):
+    list: List[DisbursementRecord]
+    total: int
+
+
+class PaginatedRepayments(BaseModel):
+    list: List[RepaymentRecord]
+    total: int
+
+
+class PaginatedReconciliations(BaseModel):
+    list: List[ReconciliationRecord]
+    total: int

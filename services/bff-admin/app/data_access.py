@@ -7,6 +7,7 @@ from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+from uuid import uuid4
 
 from .config import Settings
 
@@ -45,6 +46,15 @@ def _parse_decimal(value: Optional[str]) -> Optional[Decimal]:
         return Decimal(str(value))
     except Exception:
         return None
+
+
+def _parse_json(value: Optional[str]) -> dict:
+    if not value:
+        return {}
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        return {}
 
 
 @lru_cache(maxsize=1)
@@ -100,7 +110,6 @@ def list_applications(
     keyword: Optional[str] = None,
     page: int = 1,
     page_size: int = 20,
-    *,
     product_id: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
@@ -253,11 +262,193 @@ def count_loans_for_user(settings: Settings, user_id: str) -> int:
     return int(row[0] or 0)
 
 
+def list_disbursements(
+    settings: Settings,
+    *,
+    status: Optional[str] = None,
+    channel: Optional[str] = None,
+    loan_id: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 20,
+) -> Tuple[List[dict], int]:
+    conn = _open_connection(settings.payment_db_path)
+    if conn is None:
+        return [], 0
+    clauses: List[str] = []
+    params: List[str] = []
+    if status:
+        clauses.append('status = ?')
+        params.append(status)
+    if channel:
+        clauses.append('channel = ?')
+        params.append(channel)
+    if loan_id:
+        clauses.append('loan_id = ?')
+        params.append(loan_id)
+    if start_date:
+        clauses.append('created_at >= ?')
+        params.append(start_date)
+    if end_date:
+        clauses.append('created_at <= ?')
+        params.append(end_date)
+    where_clause = ' WHERE ' + ' AND '.join(clauses) if clauses else ''
+    try:
+        total = conn.execute(f'SELECT COUNT(*) FROM disbursements{where_clause}', params).fetchone()[0]
+        offset = (page - 1) * page_size
+        rows = conn.execute(
+            f'SELECT * FROM disbursements{where_clause} ORDER BY created_at DESC LIMIT ? OFFSET ?',
+            (*params, page_size, offset),
+        ).fetchall()
+    except sqlite3.Error:
+        conn.close()
+        return [], 0
+    finally:
+        conn.close()
+
+    results: List[dict] = []
+    for row in rows:
+        results.append(
+            {
+                'reqNo': row['req_no'],
+                'loanId': row['loan_id'],
+                'amount': _parse_decimal(row['amount']) or Decimal('0'),
+                'channel': row['channel'],
+                'status': row['status'],
+                'failureReason': row['failure_reason'],
+                'createdAt': row['created_at'],
+                'updatedAt': row['updated_at'],
+                'account': _parse_json(row['account_json']),
+            }
+        )
+    return results, int(total or 0)
+
+
+def list_repayments(
+    settings: Settings,
+    *,
+    status: Optional[str] = None,
+    channel: Optional[str] = None,
+    loan_id: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 20,
+) -> Tuple[List[dict], int]:
+    conn = _open_connection(settings.payment_db_path)
+    if conn is None:
+        return [], 0
+    clauses: List[str] = []
+    params: List[str] = []
+    if status:
+        clauses.append('status = ?')
+        params.append(status)
+    if channel:
+        clauses.append('channel = ?')
+        params.append(channel)
+    if loan_id:
+        clauses.append('loan_id = ?')
+        params.append(loan_id)
+    if start_date:
+        clauses.append('paid_at >= ?')
+        params.append(start_date)
+    if end_date:
+        clauses.append('paid_at <= ?')
+        params.append(end_date)
+    where_clause = ' WHERE ' + ' AND '.join(clauses) if clauses else ''
+    try:
+        total = conn.execute(f'SELECT COUNT(*) FROM repayments{where_clause}', params).fetchone()[0]
+        offset = (page - 1) * page_size
+        rows = conn.execute(
+            f'SELECT * FROM repayments{where_clause} ORDER BY paid_at DESC LIMIT ? OFFSET ?',
+            (*params, page_size, offset),
+        ).fetchall()
+    except sqlite3.Error:
+        conn.close()
+        return [], 0
+    finally:
+        conn.close()
+
+    results: List[dict] = []
+    for row in rows:
+        results.append(
+            {
+                'repaymentId': row['repayment_id'],
+                'loanId': row['loan_id'],
+                'amount': _parse_decimal(row['amount']) or Decimal('0'),
+                'currency': row['currency'],
+                'channel': row['channel'],
+                'status': row['status'],
+                'txnRef': row['txn_ref'],
+                'appliedAmount': _parse_decimal(row['applied_amount']) or Decimal('0'),
+                'remainingDue': _parse_decimal(row['remaining_due']) or Decimal('0'),
+                'paidAt': row['paid_at'],
+                'createdAt': row['created_at'],
+            }
+        )
+    return results, int(total or 0)
+
+
+def list_reconciliations(
+    settings: Settings,
+    *,
+    ref_type: Optional[str] = None,
+    ref_id: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 20,
+) -> Tuple[List[dict], int]:
+    conn = _open_connection(settings.ledger_db_path)
+    if conn is None:
+        return [], 0
+    clauses: List[str] = []
+    params: List[str] = []
+    if ref_type:
+        clauses.append('ref_type = ?')
+        params.append(ref_type)
+    if ref_id:
+        clauses.append('ref_id = ?')
+        params.append(ref_id)
+    where_clause = ' WHERE ' + ' AND '.join(clauses) if clauses else ''
+    try:
+        total = conn.execute(f'SELECT COUNT(*) FROM ledger_entries{where_clause}', params).fetchone()[0]
+        offset = (page - 1) * page_size
+        rows = conn.execute(
+            f'SELECT * FROM ledger_entries{where_clause} ORDER BY created_at DESC LIMIT ? OFFSET ?',
+            (*params, page_size, offset),
+        ).fetchall()
+    except sqlite3.Error:
+        conn.close()
+        return [], 0
+    finally:
+        conn.close()
+
+    results: List[dict] = []
+    for row in rows:
+        try:
+            lines = json.loads(row['lines_json'])
+        except json.JSONDecodeError:
+            lines = []
+        results.append(
+            {
+                'entryId': row['entry_id'],
+                'refType': row['ref_type'],
+                'refId': row['ref_id'],
+                'status': row['status'],
+                'lineCount': len(lines),
+                'createdAt': row['created_at'],
+            }
+        )
+    return results, int(total or 0)
+
+
 def list_collection_cases(
     settings: Settings,
     *,
     bucket: Optional[str] = None,
     assignee: Optional[str] = None,
+    case_id: Optional[str] = None,
+    status: Optional[str] = None,
     page: int = 1,
     page_size: int = 20,
 ) -> Tuple[List[dict], int]:
@@ -272,6 +463,12 @@ def list_collection_cases(
     if assignee:
         clauses.append('assigned_to = ?')
         params.append(assignee)
+    if case_id:
+        clauses.append('case_id = ?')
+        params.append(case_id)
+    if status:
+        clauses.append('status = ?')
+        params.append(status)
     where_clause = ' WHERE ' + ' AND '.join(clauses) if clauses else ''
     try:
         total = conn.execute(f'SELECT COUNT(*) FROM collection_cases{where_clause}', params).fetchone()[0]
@@ -378,6 +575,8 @@ def get_collection_case(settings: Settings, case_id: str) -> Optional[dict]:
         'summary': summary,
         'followUps': followups,
         'ptpRecords': ptp_records,
+        'ptpAmount': summary['amount'],
+        'ptpDueAt': row['ptp_due_at'],
     }
 
 
@@ -484,3 +683,73 @@ def _get_collection_summary(settings: Settings, user_id: str) -> dict:
         'lastStatus': latest['status'],
         'lastActionAt': latest['updated_at'] or latest['created_at'],
     }
+
+
+def create_collection_action(
+    settings: Settings,
+    case_id: str,
+    *,
+    action_type: str,
+    actor: str,
+    note: Optional[str],
+    result: Optional[str],
+    ptp_amount: Optional[Decimal],
+    ptp_due_at: Optional[str],
+    status: Optional[str],
+) -> None:
+    conn = _open_connection(settings.collection_db_path)
+    if conn is None:
+        raise RuntimeError('collection db missing')
+    now = datetime.utcnow().isoformat()
+    try:
+        conn.execute(
+            'INSERT INTO collection_actions (action_id, case_id, action_type, actor, note, result, ptp_amount, ptp_due_at, created_at) '
+            'VALUES (?,?,?,?,?,?,?,?,?)',
+            (
+                str(uuid4()),
+                case_id,
+                action_type,
+                actor,
+                note,
+                result,
+                str(ptp_amount) if ptp_amount is not None else None,
+                ptp_due_at,
+                now,
+            ),
+        )
+        updates = {
+            'last_action': action_type,
+            'updated_at': now,
+        }
+        if status:
+            updates['status'] = status
+        if ptp_amount is not None:
+            updates['ptp_amount'] = str(ptp_amount)
+        if ptp_due_at:
+            updates['ptp_due_at'] = ptp_due_at
+        set_clause = ', '.join(f'{col} = ?' for col in updates.keys())
+        conn.execute(
+            f'UPDATE collection_cases SET {set_clause} WHERE case_id = ?',
+            (*updates.values(), case_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_collection_stats(settings: Settings) -> dict:
+    conn = _open_connection(settings.collection_db_path)
+    if conn is None:
+        return {'totalCases': 0, 'buckets': {}, 'statuses': {}}
+    try:
+        total = conn.execute('SELECT COUNT(*) FROM collection_cases').fetchone()[0]
+        bucket_rows = conn.execute('SELECT bucket, COUNT(*) as cnt FROM collection_cases GROUP BY bucket').fetchall()
+        status_rows = conn.execute('SELECT status, COUNT(*) as cnt FROM collection_cases GROUP BY status').fetchall()
+    except sqlite3.Error:
+        conn.close()
+        return {'totalCases': 0, 'buckets': {}, 'statuses': {}}
+    finally:
+        conn.close()
+    buckets = {row['bucket']: row['cnt'] for row in bucket_rows if row['bucket']}
+    statuses = {row['status']: row['cnt'] for row in status_rows if row['status']}
+    return {'totalCases': int(total or 0), 'buckets': buckets, 'statuses': statuses}

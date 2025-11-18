@@ -127,10 +127,10 @@ export interface CollectionCase {
   amount: number;
   principalDue: number;
   overdueDays: number;
-  ptpStatus: string;
-  assignee: string;
-  channel: string;
-  due: string;
+  ptpStatus?: string;
+  assignee?: string;
+  channel?: string;
+  due?: string;
   status: string;
 }
 
@@ -157,10 +157,10 @@ export interface CollectionCallLog {
 }
 
 export interface CollectionContactInfo {
-  phone: string;
+  phone?: string;
   altPhone?: string;
   whatsapp?: string;
-  address: string;
+  address?: string;
 }
 
 export interface CollectionCaseDetail {
@@ -170,13 +170,20 @@ export interface CollectionCaseDetail {
     bucket: string;
     overdueDays: number;
     amount: number;
-    ptpStatus: string;
-    device: string;
+    ptpStatus?: string;
+    device?: string;
+    principalDue?: number;
+    assignee?: string;
+    channel?: string;
+    due?: string;
+    status?: string;
   };
   contact: CollectionContactInfo;
   followUps: CollectionFollowUp[];
   ptpRecords: CollectionPTPRecord[];
-  callLogs: CollectionCallLog[];
+  ptpDueAt?: string;
+  ptpAmount?: number;
+  callLogs?: CollectionCallLog[];
 }
 
 export interface CaseDetailHistory {
@@ -259,6 +266,41 @@ export interface BorrowerCollectionSummary {
   lastBucket?: string;
   lastStatus?: string;
   lastActionAt?: string;
+}
+
+export interface DisbursementRecord {
+  reqNo: string;
+  loanId: string;
+  amount: number;
+  channel: string;
+  status: string;
+  failureReason?: string;
+  createdAt: string;
+  updatedAt: string;
+  account: Record<string, unknown>;
+}
+
+export interface RepaymentRecord {
+  repaymentId: string;
+  loanId: string;
+  amount: number;
+  currency: string;
+  channel: string;
+  status: string;
+  txnRef: string;
+  appliedAmount: number;
+  remainingDue: number;
+  paidAt: string;
+  createdAt: string;
+}
+
+export interface ReconciliationRecord {
+  entryId: string;
+  refType: string;
+  refId: string;
+  status: string;
+  lineCount: number;
+  createdAt: string;
 }
 
 export interface UserProfile {
@@ -925,5 +967,51 @@ export const userProfilesMock: Record<string, UserProfile> = {
   }
 }
 };
+
+export const disbursementsMock: DisbursementRecord[] = [
+  {
+    reqNo: 'REQ-001',
+    loanId: 'LN202510200001',
+    amount: 150,
+    channel: 'mock-channel',
+    status: 'SUCCESS',
+    createdAt: '2025-10-20 08:10:00',
+    updatedAt: '2025-10-20 08:12:00',
+    failureReason: undefined,
+    account: { bank: 'MockBank', accountName: 'Chiamaka', accountNumber: '1234567890' }
+  },
+  {
+    reqNo: 'REQ-002',
+    loanId: 'LN202510190031',
+    amount: 550,
+    channel: 'mock-channel',
+    status: 'FAILED',
+    createdAt: '2025-10-19 22:30:00',
+    updatedAt: '2025-10-19 22:35:00',
+    failureReason: '银行返回限额',
+    account: { bank: 'MockBank', accountName: 'Nancy', accountNumber: '222333444' }
+  }
+];
+
+export const repaymentsMock: RepaymentRecord[] = [
+  {
+    repaymentId: 'RP-001',
+    loanId: 'LN202510200001',
+    amount: 50,
+    currency: 'GHS',
+    channel: 'MOMO',
+    status: 'POSTED',
+    txnRef: 'TXN-001',
+    appliedAmount: 50,
+    remainingDue: 100,
+    paidAt: '2025-10-21 09:00:00',
+    createdAt: '2025-10-21 09:00:00'
+  }
+];
+
+export const reconciliationsMock: ReconciliationRecord[] = [
+  { entryId: 'LE-001', refType: 'DISBURSEMENT', refId: 'LN202510200001', status: 'POSTED', lineCount: 2, createdAt: '2025-10-20 08:11:00' },
+  { entryId: 'LE-002', refType: 'REPAYMENT', refId: 'LN202510200001', status: 'POSTED', lineCount: 2, createdAt: '2025-10-21 09:00:00' }
+];
 import type { AdminRole } from '../constants/roles';
 import type { LoginResponse } from '../types/auth';

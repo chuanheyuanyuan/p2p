@@ -103,6 +103,16 @@
 - 新增 `services/api.exportApplications`、`utils/format.ts`（mask/currency）及对应 Vitest，mock 数据同步扩展字段与 `applicationDetailsMock`。
 - 文档/示例同步：`README.md`、`README.vibe.md`、`apps/bff-admin/sample.http`、`临时文件`、`整体开发计划.md`，方便后续 BFF 对接。
 
+### Sprint 9（Finance 聚合 & Borrower 360 增强）
+- bff-admin 新增 `/admin/v1/finance/disbursements|repayments|reconciliations` 路由，复用 `list_disbursements/list_repayments/list_reconciliations` 访问 `payment.db`/`ledger.db`，统一 JWT 鉴权并在 `schemas` 中补全财务模型；`pytest services/bff-admin/tests/test_bff_admin.py` 覆盖 finance 列表断言。
+- Admin Web `/finance` 页面落地，使用 React Query + Antd Table 显示放款/还款/对账列表，支持状态、渠道、日期过滤及分页，mock fallback 同步扩展；Borrower 360（UserProfile）UI 对接 bff-admin 返回的 `collectionSummary`、`loanSummary` 扩展字段。
+- README/PROGRESS/整体开发计划 标记财务/360 里程碑，`npm run test` + `pytest` 验证通过。
+
+### Sprint 10（催收九模块增强）
+- bff-admin `collections` 路由扩展 `/cases/{id}/actions` 支持 Decimal PTP 金额/状态更新、`/stats` 返回案件池桶/状态分布；新增 `routers/finance.py` 对接 finance 聚合，并在测试夹具中丰富催收案件/行动种子，覆盖案件列表、详情、stats 与 action 场景。
+- Admin Web `Collections` 页面完成案件池统计卡、查询表单（Bucket/状态/催收员）、Drawer 工作台、跟进/PTP 表单与 React Query 联动，实际调用 `fetchCollectionStats`、`createCollectionAction` 并在成功后刷新列表/详情缓存。
+- README（apps/admin-web）补充 Finance/Collections 能力说明，`pytest services/bff-admin/tests/test_bff_admin.py` 与 `npm run test -- --passWithNoTests` 均通过，PROGRESS/整体开发计划同步记录 Sprint 10 里程碑。
+
 ## 运行提示与偏好
 - 所有服务都需在对应目录下 `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`。
 - Python 3.9 不支持 `| None`，请使用 `Optional[...]` 并导入 `typing.Optional`。

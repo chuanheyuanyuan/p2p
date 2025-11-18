@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .routers import applications, auth, collections, reports, users
+from .routers import applications, auth, collections, finance, reports, users
 
 settings = get_settings()
 app = FastAPI(title='bff-admin', version='0.1.0')
@@ -21,6 +21,7 @@ app.include_router(auth.router)
 app.include_router(applications.router)
 app.include_router(users.router)
 app.include_router(collections.router)
+app.include_router(finance.router)
 app.include_router(reports.router)
 
 
