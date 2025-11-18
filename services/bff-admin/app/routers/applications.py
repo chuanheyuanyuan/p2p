@@ -35,21 +35,50 @@ def list_application_view(
     userId: Optional[str] = Query(default=None),
     loanId: Optional[str] = Query(default=None),
     keyword: Optional[str] = Query(default=None),
+    phone: Optional[str] = Query(default=None),
+    channel: Optional[str] = Query(default=None),
+    product: Optional[str] = Query(default=None),
+    level: Optional[str] = Query(default=None),
+    appVersion: Optional[str] = Query(default=None),
+    reviewer: Optional[str] = Query(default=None),
+    repeat: Optional[str] = Query(default=None),
+    startDate: Optional[str] = Query(default=None),
+    endDate: Optional[str] = Query(default=None),
     page: int = Query(default=1, ge=1, le=200),
     pageSize: int = Query(default=20, ge=1, le=100),
     settings: Settings = Depends(get_settings),
 ) -> PaginatedApplications:
     filters_keyword = loanId or keyword
-    rows, total = list_applications(
+    start_ts = _normalize_date(startDate, end=False)
+    end_ts = _normalize_date(endDate, end=True)
+    rows, _ = list_applications(
         settings,
         status=status,
         user_id=userId,
         keyword=filters_keyword,
-        page=page,
-        page_size=pageSize,
+        page=1,
+        page_size=settings.max_application_rows,
+        start_date=start_ts,
+        end_date=end_ts,
+        limit=settings.max_application_rows,
     )
     records: List[ApplicationRecord] = [_to_application_record(row, settings) for row in rows]
-    return PaginatedApplications(list=records, total=total)
+    filtered_records = _apply_application_filters(
+        records,
+        phone=phone,
+        channel=channel,
+        product=product,
+        level=level,
+        app_version=appVersion,
+        reviewer=reviewer,
+        repeat=repeat,
+        loan_id=loanId,
+    )
+    total = len(filtered_records)
+    start = (page - 1) * pageSize
+    end_idx = start + pageSize
+    page_items = filtered_records[start:end_idx]
+    return PaginatedApplications(list=page_items, total=total)
 
 
 @router.get('/applications/{loan_id}', response_model=ApplicationDetail)
@@ -110,7 +139,8 @@ def export_applications() -> dict:
 def _to_application_record(row: dict, settings: Settings) -> ApplicationRecord:
     created = _format_time(row['createdAt'])
     device = get_latest_device(str(settings.user_db_path), row['userId'])
-    repeat = count_loans_for_user(settings, row['userId']) > 1
+    loan_count = count_loans_for_user(settings, row['userId'])
+    repeat = loan_count > 1
     status_label = STATUS_LABELS.get(row['status'], row['status'])
     last_paid = row.get('lastPaidAt')
     return ApplicationRecord(
@@ -119,12 +149,12 @@ def _to_application_record(row: dict, settings: Settings) -> ApplicationRecord:
         product=row['product'],
         productId=row['productId'],
         name=f"Borrower {row['userId']}",
-        phone=None,
-        channel='app',
-        level='Level1',
+        phone=_fake_phone(row['userId']),
+        channel=_derive_channel(row['productId'], row['userId']),
+        level=_derive_level(loan_count),
         amount=row['amount'],
         term=f"{row.get('termDays', 0)}D",
-        reviewer='系统',
+        reviewer=_derive_reviewer(repeat),
         status=status_label,
         statusCode=row.get('statusCode'),
         submittedAt=created,
@@ -170,6 +200,82 @@ def _build_documents(record: ApplicationRecord) -> List[ApplicationDocument]:
         ApplicationDocument(type='OCR', name='身份证', url=f'{base_url}/ocr.pdf', updatedAt=record.submittedAt),
         ApplicationDocument(type='合同', name='借款合同', url=f'{base_url}/contract.pdf', updatedAt=record.submittedAt),
     ]
+
+
+def _normalize_date(value: Optional[str], end: bool) -> Optional[str]:
+    if not value:
+        return None
+    if 'T' in value:
+        return value
+    suffix = 'T23:59:59' if end else 'T00:00:00'
+    return f'{value}{suffix}'
+
+
+def _apply_application_filters(
+    records: List[ApplicationRecord],
+    *,
+    phone: Optional[str],
+    channel: Optional[str],
+    product: Optional[str],
+    level: Optional[str],
+    app_version: Optional[str],
+    reviewer: Optional[str],
+    repeat: Optional[str],
+    loan_id: Optional[str],
+) -> List[ApplicationRecord]:
+    def matches(record: ApplicationRecord) -> bool:
+        if phone and phone.lower() not in (record.phone or '').lower():
+            return False
+        if channel and record.channel != channel:
+            return False
+        if product and record.product != product and record.productId != product:
+            return False
+        if level and record.level != level:
+            return False
+        if app_version and record.appVersion != app_version:
+            return False
+        if reviewer and record.reviewer != reviewer:
+            return False
+        if repeat == 'yes' and not record.repeat:
+            return False
+        if repeat == 'no' and record.repeat:
+            return False
+        if loan_id and record.id != loan_id:
+            return False
+        return True
+
+    return [rec for rec in records if matches(rec)]
+
+
+def _fake_phone(user_id: str) -> str:
+    digits = ''.join(ch for ch in user_id if ch.isdigit())
+    seed = digits or str(abs(hash(user_id)))
+    suffix = seed.zfill(4)[-4:]
+    return f'+233-55{suffix}'
+
+
+CHANNEL_POOL = ['Google Ads', 'Facebook Ads', 'Affiliate', 'App Organic']
+
+
+def _derive_channel(product_id: Optional[str], user_id: str) -> str:
+    key = f'{product_id or ""}{user_id}'
+    return CHANNEL_POOL[abs(hash(key)) % len(CHANNEL_POOL)]
+
+
+def _derive_level(loan_count: int) -> str:
+    if loan_count >= 5:
+        return 'Level5'
+    if loan_count == 4:
+        return 'Level4'
+    if loan_count == 3:
+        return 'Level3'
+    if loan_count == 2:
+        return 'Level2'
+    return 'Level1'
+
+
+def _derive_reviewer(is_repeat: bool) -> str:
+    return '资深审批员' if is_repeat else '系统'
 
 
 STATUS_LABELS = {

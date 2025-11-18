@@ -59,7 +59,14 @@ def _load_products(products_path: str) -> Dict[str, str]:
     return {item.get('productId'): item.get('name', item.get('productId')) for item in items}
 
 
-def _loan_filters(status: Optional[str], user_id: Optional[str], keyword: Optional[str]) -> Tuple[str, List[str]]:
+def _loan_filters(
+    status: Optional[str],
+    user_id: Optional[str],
+    keyword: Optional[str],
+    product_id: Optional[str],
+    start_date: Optional[str],
+    end_date: Optional[str],
+) -> Tuple[str, List[str]]:
     clauses: List[str] = []
     params: List[str] = []
     if status:
@@ -72,6 +79,15 @@ def _loan_filters(status: Optional[str], user_id: Optional[str], keyword: Option
         clauses.append('(la.loan_id LIKE ? OR la.user_id LIKE ?)')
         like = f'%{keyword}%'
         params.extend([like, like])
+    if product_id:
+        clauses.append('la.product_id = ?')
+        params.append(product_id)
+    if start_date:
+        clauses.append('la.created_at >= ?')
+        params.append(start_date)
+    if end_date:
+        clauses.append('la.created_at <= ?')
+        params.append(end_date)
     where_clause = ' WHERE ' + ' AND '.join(clauses) if clauses else ''
     return where_clause, params
 
@@ -84,26 +100,35 @@ def list_applications(
     keyword: Optional[str] = None,
     page: int = 1,
     page_size: int = 20,
+    *,
+    product_id: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    limit: Optional[int] = None,
 ) -> Tuple[List[dict], int]:
     conn = _open_connection(settings.loan_db_path)
     if conn is None:
         return [], 0
     try:
-        where_clause, params = _loan_filters(status, user_id, keyword)
+        where_clause, params = _loan_filters(status, user_id, keyword, product_id, start_date, end_date)
         total = conn.execute(
             f'SELECT COUNT(*) FROM loan_applications la{where_clause}',
             params,
         ).fetchone()[0]
-        offset = (page - 1) * page_size
         query = (
             'SELECT la.*, rs.original_amount, rs.outstanding_amount, rs.paid_amount, rs.last_paid_at '
             'FROM loan_applications la '
             'LEFT JOIN repayment_schedules rs ON la.loan_id = rs.loan_id'
             f'{where_clause} '
             'ORDER BY la.created_at DESC '
-            'LIMIT ? OFFSET ?'
         )
-        rows = conn.execute(query, (*params, page_size, offset)).fetchall()
+        if limit is not None:
+            query += 'LIMIT ?'
+            rows = conn.execute(query, (*params, limit)).fetchall()
+        else:
+            offset = (page - 1) * page_size
+            query += 'LIMIT ? OFFSET ?'
+            rows = conn.execute(query, (*params, page_size, offset)).fetchall()
     except sqlite3.Error:
         return [], 0
     finally:

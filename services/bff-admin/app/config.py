@@ -21,7 +21,12 @@ class AdminUser(BaseModel):
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8', env_prefix='BFF_ADMIN_')
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        env_file_encoding='utf-8',
+        env_prefix='BFF_ADMIN_',
+        json_encoders={Path: str},
+    )
 
     app_name: str = 'bff-admin'
     loan_base_url: str = 'http://127.0.0.1:8083'
@@ -71,10 +76,7 @@ class Settings(BaseSettings):
     payment_db_path: Path = Field(default=SERVICES_DIR / 'payment-svc' / 'payment.db')
     collection_db_path: Path = Field(default=SERVICES_DIR / 'collection-svc' / 'collection.db')
     user_db_path: Path = Field(default=SERVICES_DIR / 'user-svc' / 'user.db')
-
-    class Config:
-        json_encoders = {Path: str}
-
+    max_application_rows: int = 1000
 
 @lru_cache
 def get_settings() -> Settings:

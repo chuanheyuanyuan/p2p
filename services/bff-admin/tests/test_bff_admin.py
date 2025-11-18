@@ -2,7 +2,7 @@ from importlib import reload
 from pathlib import Path
 import sqlite3
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -23,7 +23,10 @@ def client(tmp_path, monkeypatch):
     _seed_user_db(user_db)
     _seed_collection_db(collection_db)
     _seed_payment_db(payment_db)
-    products_path.write_text('[{"productId":"P_BASIC","name":"InsCash Basic"}]', encoding='utf-8')
+    products_path.write_text(
+        '[{"productId":"P_BASIC","name":"InsCash Basic"},{"productId":"P_MAX","name":"InsCash Max"}]',
+        encoding='utf-8',
+    )
 
     monkeypatch.setenv('BFF_ADMIN_LOAN_DB_PATH', str(loan_db))
     monkeypatch.setenv('BFF_ADMIN_USER_DB_PATH', str(user_db))
@@ -75,24 +78,21 @@ def _seed_loan_db(path: Path) -> None:
         '''
     )
     now = datetime.utcnow().isoformat()
-    conn.execute(
-        'INSERT INTO loan_applications VALUES (?,?,?,?,?,?,?,?,?,?)',
-        (
-            'LN123',
-            'U1',
-            'P_BASIC',
-            500,
-            7,
-            'SUBMITTED',
-            now,
-            now,
-            'AUTO_PASS',
-            720,
-        ),
-    )
-    conn.execute(
-        'INSERT INTO repayment_schedules VALUES (?,?,?,?,?,?,?,?,?)',
+    earlier = (datetime.utcnow() - timedelta(days=7)).isoformat()
+    rows = [
+        ('LN123', 'U1', 'P_BASIC', 500, 7, 'SUBMITTED', now, now, 'AUTO_PASS', 720),
+        ('LN124', 'U1', 'P_BASIC', 800, 14, 'AUTO_APPROVED', earlier, earlier, 'AUTO_PASS', 710),
+        ('LN777', 'U3', 'P_MAX', 1000, 30, 'AUTO_REJECTED', now, now, 'AUTO_REVIEW', 610),
+    ]
+    conn.executemany('INSERT INTO loan_applications VALUES (?,?,?,?,?,?,?,?,?,?)', rows)
+    schedules = [
         ('LN123', 'GHS', '500', '250', '250', 'ACTIVE', now, now, now),
+        ('LN124', 'GHS', '800', '800', '0', 'REPAID', earlier, now, earlier),
+        ('LN777', 'GHS', '1000', '1000', '0', 'ACTIVE', now, now, None),
+    ]
+    conn.executemany(
+        'INSERT INTO repayment_schedules VALUES (?,?,?,?,?,?,?,?,?)',
+        schedules,
     )
     conn.commit()
     conn.close()
@@ -139,9 +139,13 @@ def _seed_user_db(path: Path) -> None:
         '''
     )
     now = datetime.utcnow().isoformat()
-    conn.execute(
-        'INSERT INTO user_devices (user_id, device_id, fingerprint, platform, app_version, privacy_consent, location_consent, created_at, updated_at, last_active_at) VALUES (?,?,?,?,?,?,?,?,?,?)',
+    devices = [
         ('U1', 'device-1', 'fp-1', 'android', '1.0.0', 1, 0, now, now, now),
+        ('U3', 'device-7', 'fp-7', 'ios', '1.1.0', 1, 1, now, now, now),
+    ]
+    conn.executemany(
+        'INSERT INTO user_devices (user_id, device_id, fingerprint, platform, app_version, privacy_consent, location_consent, created_at, updated_at, last_active_at) VALUES (?,?,?,?,?,?,?,?,?,?)',
+        devices,
     )
     conn.execute(
         'INSERT INTO user_kyc (user_id, kyc_status, doc_type, doc_number, created_at, updated_at) VALUES (?,?,?,?,?,?)',
@@ -261,8 +265,9 @@ def test_applications_and_users(client):
     resp = client.get('/admin/v1/applications', headers=headers)
     assert resp.status_code == 200
     data = resp.json()
-    assert data['total'] == 1
-    loan_id = data['list'][0]['id']
+    assert data['total'] == 3
+    assert data['list'][0]['phone'].startswith('+233-55')
+    loan_id = 'LN123'
 
     detail = client.get(f'/admin/v1/applications/{loan_id}', headers=headers)
     assert detail.status_code == 200
@@ -289,3 +294,23 @@ def test_collections_and_reports(client):
     daily = client.get('/admin/v1/reports/daily', headers=headers)
     assert daily.status_code == 200
     assert daily.json()['total'] >= 1
+
+
+def test_application_filters(client):
+    headers = _auth_header(client)
+    resp_repeat_yes = client.get('/admin/v1/applications', headers=headers, params={'repeat': 'yes'})
+    assert resp_repeat_yes.status_code == 200
+    assert resp_repeat_yes.json()['total'] == 2
+
+    resp_repeat_no = client.get('/admin/v1/applications', headers=headers, params={'repeat': 'no'})
+    assert resp_repeat_no.status_code == 200
+    assert resp_repeat_no.json()['total'] == 1
+
+    loan_resp = client.get('/admin/v1/applications', headers=headers, params={'loanId': 'LN777'})
+    assert loan_resp.status_code == 200
+    assert loan_resp.json()['total'] == 1
+    assert loan_resp.json()['list'][0]['id'] == 'LN777'
+
+    future = client.get('/admin/v1/applications', headers=headers, params={'startDate': '2099-01-01', 'endDate': '2099-01-02'})
+    assert future.status_code == 200
+    assert future.json()['total'] == 0

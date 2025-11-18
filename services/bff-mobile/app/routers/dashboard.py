@@ -30,7 +30,7 @@ async def _fetch_loans(http_client: AsyncClient, settings: Settings, user_id: st
     try:
         response = await http_client.get(url, params={'limit': settings.loan_list_limit})
         response.raise_for_status()
-    except (HTTPStatusError, RequestError) as exc:  # pragma: no cover - error translation tested elsewhere
+    except (HTTPStatusError, RequestError) as exc:  # pragma: no cover
         translate_http_error(exc)
     payload = response.json()
     raw_items = payload.get('items', []) if isinstance(payload, dict) else []
@@ -42,7 +42,7 @@ async def _fetch_recommendations(http_client: AsyncClient, settings: Settings) -
     try:
         response = await http_client.get(url)
         response.raise_for_status()
-    except (HTTPStatusError, RequestError) as exc:  # pragma: no cover - error translation tested elsewhere
+    except (HTTPStatusError, RequestError) as exc:  # pragma: no cover
         translate_http_error(exc)
     payload = response.json()
     raw_items = payload.get('items', []) if isinstance(payload, dict) else []
