@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import {
   AppstoreOutlined,
+  BarChartOutlined,
   DashboardOutlined,
   DatabaseOutlined,
   DollarCircleOutlined,

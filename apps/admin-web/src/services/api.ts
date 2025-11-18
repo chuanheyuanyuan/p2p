@@ -9,7 +9,14 @@ import type {
   FinanceDisbursement,
   FinanceRepayment,
   ReconciliationDiff,
-  UserProfile
+  UserProfile,
+  OpsProductConfig,
+  GradeConfig,
+  ChannelLinkConfig,
+  MessageTemplateConfig,
+  ApprovalRuleConfig,
+  ReleaseNote,
+  ReportCenterData
 } from '../mocks/data';
 import {
   applicationsMock,
@@ -23,7 +30,14 @@ import {
   financeDisbursementsMock,
   financeRepaymentsMock,
   reconciliationDiffsMock,
-  userProfilesMock
+  userProfilesMock,
+  opsProductsMock,
+  gradeConfigsMock,
+  channelLinksMock,
+  messageTemplatesMock,
+  approvalRulesMock,
+  releasesMock,
+  reportCenterMock
 } from '../mocks/data';
 import type { LoginPayload, LoginResponse } from '../types/auth';
 
@@ -169,6 +183,12 @@ export interface DailyStatsQuery {
   pageSize?: number;
 }
 
+export interface ReportCenterQuery {
+  businessDate: string;
+  channel?: string;
+  product?: string;
+}
+
 export interface FinanceQuery {
   status?: string;
   channel?: string;
@@ -191,6 +211,44 @@ export async function fetchDailyStats(params: DailyStatsQuery): Promise<Paginate
       list: dailyStatsMock,
       total: dailyStatsMock.length
     };
+  }
+}
+
+export async function fetchReportCenter(params: ReportCenterQuery): Promise<ReportCenterData> {
+  try {
+    const search = new URLSearchParams();
+    search.append('businessDate', params.businessDate);
+    if (params.channel && params.channel !== 'all') {
+      search.append('channel', params.channel);
+    }
+    if (params.product && params.product !== 'all') {
+      search.append('product', params.product);
+    }
+    const query = search.toString();
+    const endpoint = query ? `/admin/v1/reports/center?${query}` : '/admin/v1/reports/center';
+    return await request<ReportCenterData>(endpoint);
+  } catch (error) {
+    console.warn('fetchReportCenter fallback', error);
+    return {
+      ...reportCenterMock,
+      filters: {
+        businessDate: params.businessDate,
+        channel: params.channel ?? null,
+        product: params.product ?? null
+      }
+    };
+  }
+}
+
+export async function exportReportCenter(params: ReportCenterQuery): Promise<{ taskId: string }> {
+  try {
+    return await request<{ taskId: string }>('/admin/v1/reports/center/export', {
+      method: 'POST',
+      body: JSON.stringify(params)
+    });
+  } catch (error) {
+    console.warn('exportReportCenter fallback', error);
+    return { taskId: `mock-report-center-export-${Date.now()}` };
   }
 }
 
@@ -333,3 +391,57 @@ const matchesDateRange = (value: string, start?: string, end?: string) => {
   }
   return true;
 };
+
+export async function fetchOpsProducts(): Promise<OpsProductConfig[]> {
+  try {
+    return await request('/admin/v1/ops/products');
+  } catch (error) {
+    console.warn('fetchOpsProducts fallback', error);
+    return opsProductsMock;
+  }
+}
+
+export async function fetchGradeConfigs(): Promise<GradeConfig[]> {
+  try {
+    return await request('/admin/v1/ops/grades');
+  } catch (error) {
+    console.warn('fetchGradeConfigs fallback', error);
+    return gradeConfigsMock;
+  }
+}
+
+export async function fetchChannelLinks(): Promise<ChannelLinkConfig[]> {
+  try {
+    return await request('/admin/v1/channel/links');
+  } catch (error) {
+    console.warn('fetchChannelLinks fallback', error);
+    return channelLinksMock;
+  }
+}
+
+export async function fetchMessageTemplates(): Promise<MessageTemplateConfig[]> {
+  try {
+    return await request('/admin/v1/ops/messages');
+  } catch (error) {
+    console.warn('fetchMessageTemplates fallback', error);
+    return messageTemplatesMock;
+  }
+}
+
+export async function fetchApprovalRules(): Promise<ApprovalRuleConfig[]> {
+  try {
+    return await request('/admin/v1/ops/approval-rules');
+  } catch (error) {
+    console.warn('fetchApprovalRules fallback', error);
+    return approvalRulesMock;
+  }
+}
+
+export async function fetchAppReleases(): Promise<ReleaseNote[]> {
+  try {
+    return await request('/admin/v1/ops/releases');
+  } catch (error) {
+    console.warn('fetchAppReleases fallback', error);
+    return releasesMock;
+  }
+}

@@ -43,7 +43,8 @@ src/
 - 催收工作台：案件池统计卡 + 案件列表 + Drawer 工作台，跟进/PTP 表单 已接入 `/admin/v1/collections/cases|stats` 与动作 API，支持状态流转、PTP 记录和 React Query 缓存刷新。
 - Dashboard：接入 `/admin/v1/dashboard`（mock fallback），展示 KPI、逾期概览、催回进度、今日指标、新客转化率，支持错误提示与重试。
 - Daily Stats：对接 `/admin/v1/reports/daily`，提供时间/渠道/复借筛选、指标汇总、导出任务触发。
-- Ops Config / App 升级等基础页面。
+- 报表中心（M8 预研版）：业务日期 + 快捷日期（今日/昨日/近 7 天）+ 渠道 + 产品筛选，展示平台 KPI、逾期迁移率、渠道漏斗、复借率与分析备注，可触发导出任务并支持 mock fallback。
+- 运维配置（M7）：Ops Config 页面提供产品配置、等级策略、渠道链接、消息模板、审批规则与 App 版本列表，可直接查看与模拟新增操作。
 
 ## 登录与权限
 

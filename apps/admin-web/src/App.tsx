@@ -3,7 +3,6 @@ import AdminLayout from './layouts/AdminLayout';
 import Dashboard from './pages/Dashboard';
 import DailyStats from './pages/DailyStats';
 import ReportCenter from './pages/ReportCenter';
-import Finance from './pages/Finance';
 import Applications from './pages/Applications';
 import ApplicationDetail from './pages/ApplicationDetail';
 import Collections from './pages/Collections';
@@ -47,15 +46,6 @@ const App = () => (
             </RoleGuard>
           }
         />
-        <Route
-          path="finance"
-          element={
-            <RoleGuard allowedRoles={routeRoleMap['/finance']}>
-              <Finance />
-            </RoleGuard>
-          }
-        />
-        <Route
           path="applications"
           element={
             <RoleGuard allowedRoles={routeRoleMap['/applications']}>
@@ -116,14 +106,6 @@ const App = () => (
           element={
             <RoleGuard allowedRoles={routeRoleMap['/channel']}>
               <ChannelManagement />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="finance"
-          element={
-            <RoleGuard allowedRoles={routeRoleMap['/finance']}>
-              <Finance />
             </RoleGuard>
           }
         />

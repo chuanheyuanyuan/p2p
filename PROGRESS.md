@@ -112,6 +112,19 @@
 - `mocks/data.ts` 扩展 `FinanceDisbursement`/`FinanceRepayment`/`ReconciliationDiff` mock；`services/api.ts` 补充财务相关查询、导出、重试接口兜底逻辑，`apps/bff-admin/sample.http` 增加对应示例。
 - 文档更新：`README.md`、`README.vibe.md` 记录 M5 能力，`整体开发计划.md` 标记前端路线进度，`临时文件` 说明调试步骤。
 
+### admin-web（T19 · M7 运营配置 & App 升级）
+- `/ops` 页面重构为多 Tab：产品配置、等级管理、渠道链接、消息模板、审批规则、App 版本清单，全部通过 React Query 拉取 mock 数据并允许本地新增/启停模拟。
+- `mocks/data.ts` 增加 `opsProductsMock`、`gradeConfigsMock`、`channelLinksMock`、`messageTemplatesMock`、`approvalRulesMock`，`services/api.ts` 提供对应 fetch fallback。
+- `README.md`、`README.vibe.md`、`apps/bff-admin/sample.http`、`整体开发计划.md` 与 `临时文件` 更新 M7 功能说明，便于后续 BFF 接口联调。
+
+### admin-web（T19 · M8 报表中心首版）
+- 新增 `ReportCenter` 页面与 `/report-center` 菜单，聚合平台 KPI、逾期迁移率、渠道漏斗、复借率，并展示分析备注。
+- 过滤条件支持业务日期/渠道/产品，通过 React Query + Ant Design Form 触发 `fetchReportCenter`，与 bff-admin `/admin/v1/reports/center` 对齐，失败时 fallback 至 `reportCenterMock`。
+- `services/api.ts` 增加 `ReportCenterQuery`/`fetchReportCenter`，`mocks/data.ts` 扩展 `ReportCenterData` 模型与 mock 数据，侧边栏/路由加入权限守卫（analyst/ops）。
+- README 更新“当前特性”，强调 M8 报表中心预研版及数据来源/刷新节奏，并跑通 `npm run test` 验证。
+- 报表中心支持导出任务：页面新增“导出”按钮，调用 `exportReportCenter`（POST `/admin/v1/reports/center/export`），成功提示任务号，失败时展示错误。
+- 报表中心优化交互：新增“今日/昨日/近 7 天”快捷日期、Spin/Empty 状态，过滤与导出按钮共用 React Query 状态提示，提升体验。
+
 ### Sprint 9（Finance 聚合 & Borrower 360 增强）
 - bff-admin 新增 `/admin/v1/finance/disbursements|repayments|reconciliations` 路由，复用 `list_disbursements/list_repayments/list_reconciliations` 访问 `payment.db`/`ledger.db`，统一 JWT 鉴权并在 `schemas` 中补全财务模型；`pytest services/bff-admin/tests/test_bff_admin.py` 覆盖 finance 列表断言。
 - Admin Web `/finance` 页面落地，使用 React Query + Antd Table 显示放款/还款/对账列表，支持状态、渠道、日期过滤及分页，mock fallback 同步扩展；Borrower 360（UserProfile）UI 对接 bff-admin 返回的 `collectionSummary`、`loanSummary` 扩展字段。
