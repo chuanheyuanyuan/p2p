@@ -225,6 +225,18 @@ export async function fetchReportCenter(params: ReportCenterQuery): Promise<Repo
   }
 }
 
+export async function exportReportCenter(params: ReportCenterQuery): Promise<{ taskId: string }> {
+  try {
+    return await request<{ taskId: string }>('/admin/v1/reports/center/export', {
+      method: 'POST',
+      body: JSON.stringify(params)
+    });
+  } catch (error) {
+    console.warn('exportReportCenter fallback', error);
+    return { taskId: `mock-report-center-export-${Date.now()}` };
+  }
+}
+
 export async function exportApplications(params: ApplicationQuery): Promise<{ taskId: string }> {
   try {
     return await request<{ taskId: string }>('/admin/v1/applications/export', {
