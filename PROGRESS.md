@@ -101,6 +101,7 @@
 - `services/api.ts` 增加 `ReportCenterQuery`/`fetchReportCenter`，`mocks/data.ts` 扩展 `ReportCenterData` 模型与 mock 数据，侧边栏/路由加入权限守卫（analyst/ops）。
 - README 更新“当前特性”，强调 M8 报表中心预研版及数据来源/刷新节奏，并跑通 `npm run test` 验证。
 - 报表中心支持导出任务：页面新增“导出”按钮，调用 `exportReportCenter`（POST `/admin/v1/reports/center/export`），成功提示任务号，失败时展示错误。
+- 报表中心优化交互：新增“今日/昨日/近 7 天”快捷日期、Spin/Empty 状态，过滤与导出按钮共用 React Query 状态提示，提升体验。
 
 ### admin-web（T19 · M7 运营配置 & App 升级）
 - `/ops` 页面重构为多 Tab：产品配置、等级管理、渠道链接、消息模板、审批规则、App 版本清单，全部通过 React Query 拉取 mock 数据并允许本地新增/启停模拟。

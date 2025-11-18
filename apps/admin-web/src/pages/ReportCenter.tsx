@@ -1,5 +1,23 @@
 import { useMemo, useState } from 'react';
-import { Alert, Button, Card, Col, DatePicker, Form, Row, Select, Space, Statistic, Table, Tag, Typography, message } from 'antd';
+import {
+  Alert,
+  Button,
+  Card,
+  Col,
+  DatePicker,
+  Empty,
+  Form,
+  Row,
+  Segmented,
+  Select,
+  Space,
+  Spin,
+  Statistic,
+  Table,
+  Tag,
+  Typography,
+  message
+} from 'antd';
 import type { TableColumnsType } from 'antd';
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
@@ -27,11 +45,18 @@ const renderChangeTag = (value: number) => (
   <Tag color={value >= 0 ? 'green' : 'red'}>{value >= 0 ? `+${value}` : value}pp</Tag>
 );
 
+const quickRanges = [
+  { label: '今日', value: 'today' },
+  { label: '昨日', value: 'yesterday' },
+  { label: '近 7 天', value: 'last7' }
+] as const;
+
 const ReportCenter = () => {
   const [form] = Form.useForm();
   const [query, setQuery] = useState<ReportCenterQuery>({
     businessDate: defaultDate.format('YYYY-MM-DD')
   });
+  const [activeQuickRange, setActiveQuickRange] = useState<(typeof quickRanges)[number]['value']>('today');
 
   const { data, isPending, isFetching, error, refetch } = useQuery<ReportCenterData>({
     queryKey: ['report-center', query],
@@ -59,6 +84,7 @@ const ReportCenter = () => {
 
   const handleReset = () => {
     form.resetFields();
+    setActiveQuickRange('today');
     setQuery({ businessDate: defaultDate.format('YYYY-MM-DD') });
   };
 
@@ -74,6 +100,27 @@ const ReportCenter = () => {
 
   const handleExport = () => {
     exportMutation.mutate();
+  };
+
+  const handleQuickRangeChange = (value: (typeof quickRanges)[number]['value']) => {
+    setActiveQuickRange(value);
+    if (value === 'today') {
+      const next = defaultDate;
+      form.setFieldsValue({ businessDate: next });
+      setQuery({ businessDate: next.format('YYYY-MM-DD'), channel: query.channel, product: query.product });
+      return;
+    }
+    if (value === 'yesterday') {
+      const next = defaultDate.subtract(1, 'day');
+      form.setFieldsValue({ businessDate: next });
+      setQuery({ businessDate: next.format('YYYY-MM-DD'), channel: query.channel, product: query.product });
+      return;
+    }
+    if (value === 'last7') {
+      const next = defaultDate.subtract(6, 'day');
+      form.setFieldsValue({ businessDate: next });
+      setQuery({ businessDate: next.format('YYYY-MM-DD'), channel: query.channel, product: query.product });
+    }
   };
 
   const overdueColumns: TableColumnsType<OverdueMigrationRow> = useMemo(
@@ -148,6 +195,13 @@ const ReportCenter = () => {
               <Form.Item label="业务日期" name="businessDate">
                 <DatePicker allowClear={false} style={{ width: '100%' }} />
               </Form.Item>
+              <Form.Item label="快捷日期" style={{ marginBottom: 0 }}>
+                <Segmented
+                  options={quickRanges}
+                  value={activeQuickRange}
+                  onChange={(val) => handleQuickRangeChange(val as (typeof quickRanges)[number]['value'])}
+                />
+              </Form.Item>
               <Form.Item label="渠道" name="channel">
                 <Select options={channelOptions} />
               </Form.Item>
@@ -187,35 +241,37 @@ const ReportCenter = () => {
           <Typography.Text type="secondary">上次更新时间：{data?.lastUpdated ?? '--'}</Typography.Text>
         </Card>
 
-        <Card title="逾期迁移率">
-          <Table<OverdueMigrationRow>
-            rowKey={(record) => record.stage}
-            columns={overdueColumns}
-            dataSource={overdueData}
-            pagination={false}
-            loading={isPending || isFetching}
-          />
-        </Card>
+        <Spin spinning={isPending || isFetching}>
+          <Card title="逾期迁移率">
+            <Table<OverdueMigrationRow>
+              rowKey={(record) => record.stage}
+              columns={overdueColumns}
+              dataSource={overdueData}
+              pagination={false}
+              locale={{ emptyText: <Empty description="暂无逾期迁移数据" /> }}
+            />
+          </Card>
 
-        <Card title="渠道漏斗">
-          <Table<ChannelFunnelRow>
-            rowKey={(record) => record.channel}
-            columns={channelColumns}
-            dataSource={funnelData}
-            pagination={false}
-            loading={isPending || isFetching}
-          />
-        </Card>
+          <Card title="渠道漏斗">
+            <Table<ChannelFunnelRow>
+              rowKey={(record) => record.channel}
+              columns={channelColumns}
+              dataSource={funnelData}
+              pagination={false}
+              locale={{ emptyText: <Empty description="暂无渠道数据" /> }}
+            />
+          </Card>
 
-        <Card title="复借率">
-          <Table<ReborrowRateRow>
-            rowKey={(record) => record.segment}
-            columns={reborrowColumns}
-            dataSource={reborrowData}
-            pagination={false}
-            loading={isPending || isFetching}
-          />
-        </Card>
+          <Card title="复借率">
+            <Table<ReborrowRateRow>
+              rowKey={(record) => record.segment}
+              columns={reborrowColumns}
+              dataSource={reborrowData}
+              pagination={false}
+              locale={{ emptyText: <Empty description="暂无复借数据" /> }}
+            />
+          </Card>
+        </Spin>
 
         {notes.length > 0 && (
           <Card title="分析备注" type="inner">
