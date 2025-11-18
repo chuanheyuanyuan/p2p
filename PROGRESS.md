@@ -80,6 +80,10 @@
   - 目录：`services/bff-mobile/`，端口 8001，通过 `httpx` 调用 loan-svc 聚合 Dashboard/贷款清单，并在 POST `/mobile/v1/loans` 自动注入 `userId`。
   - `GET /mobile/v1/dashboard` 返回应还金额、活动贷款与产品推荐；`GET /mobile/v1/loans` 列出 borrower 借款记录，全部接口需 `X-User-Id` 请求头。
   - README.vibe/sample.http 同步说明 header、示例；新增 `tests/test_mobile_bff.py` 使用 `respx` mock 下游，保障聚合逻辑。
+- `observability-svc`（T20）提供统一观测与审计：
+  - 目录：`infra/observability/`，端口 8030，FastAPI `POST/GET /audit/events` 将事件写入 `audit.db` 并支持 actor/action/time 过滤，启动即执行过期数据清理（默认 90 天）。
+  - 接入 JWT Bearer 鉴权（沿用 auth-svc Secret），自动提取 `service` claim 写入 `sourceService` 字段，并保留 `/metrics` Prometheus 指标。
+  - 新增 Kafka/ClickHouse stub 管道（写入本地 log）与 `dashboards/audit-overview.json` Grafana 模板；`tests/test_audit_api.py` 覆盖创建、过滤、详情、metrics 及管道落地；README/Taskfile 同步更新运行与配置说明。
 
 ### admin-web（T19 · M1 登录 & RBAC）
 - 技术栈调整为 React Query + Zustand：所有列表/详情数据改用 React Query，`src/services/http.ts` 自动注入 `Authorization`，mock 兜底仍在 `services/api.ts`。

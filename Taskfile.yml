@@ -206,3 +206,15 @@ tasks:
         else
           echo "⚠️  $SERVICE_PATH/app/main.py 未找到，请按 README.vibe.md 指引 scaffold 服务。"
         fi
+
+  run:observability:
+    desc: 启动 Observability Audit Service。
+    cmds:
+      - |
+        SERVICE_PATH="infra/observability"
+        PORT=8030
+        if [ -f "$SERVICE_PATH/app/main.py" ]; then
+          (cd "$SERVICE_PATH" && {{.UV}} run uvicorn app.main:app --reload --port $PORT)
+        else
+          echo "⚠️  $SERVICE_PATH/app/main.py 未找到，请检查 infra/observability";
+        fi
