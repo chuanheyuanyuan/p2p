@@ -6,7 +6,7 @@
 1. `cd services/bff-mobile && python3 -m venv .venv && source .venv/bin/activate`，`pip install -r requirements.txt`。
 2. `uvicorn app.main:app --reload --port 8001` 或 `task run:bff-mobile`（需将 Taskfile 中路径指向 `services/bff-mobile`）。
 3. `pytest services/bff-mobile/tests -q` 校验聚合逻辑，`ruff` 可选。
-4. 使用 VS Code REST Client 打开 `sample.http`，附带 `X-User-Id` 请求头即可在 vibe coding 中快速回放接口。
+4. 使用 VS Code REST Client 打开 `sample.http`，附带 `X-User-Id` 请求头即可回放接口。
 
 ## 🔌 API 快速体验
 - 默认本地地址：`http://localhost:8001`

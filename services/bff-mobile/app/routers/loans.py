@@ -8,7 +8,7 @@ from ..dependencies import get_http_client
 from ..http_utils import build_service_url, translate_http_error
 from ..schemas import LoanCreateRequest, LoanCreateResponse, LoanListResponse, LoanSummary
 from ..security import BorrowerContext, get_borrower_context
-from .dashboard import _normalize_loan  # reuse helper
+from .dashboard import _normalize_loan
 
 router = APIRouter()
 
@@ -38,7 +38,7 @@ async def create_loan(
     try:
         response = await http_client.post(url, json=body, headers=headers)
         response.raise_for_status()
-    except (HTTPStatusError, RequestError) as exc:  # pragma: no cover - translation tested elsewhere
+    except (HTTPStatusError, RequestError) as exc:  # pragma: no cover - error translation tested elsewhere
         translate_http_error(exc)
     data = response.json()
     return LoanCreateResponse(**data)
@@ -49,7 +49,7 @@ async def _fetch_loans(http_client: AsyncClient, settings: Settings, user_id: st
     try:
         response = await http_client.get(url, params={'limit': settings.loan_list_limit})
         response.raise_for_status()
-    except (HTTPStatusError, RequestError) as exc:  # pragma: no cover
+    except (HTTPStatusError, RequestError) as exc:  # pragma: no cover - error translation tested elsewhere
         translate_http_error(exc)
     payload = response.json()
     raw_items = payload.get('items', []) if isinstance(payload, dict) else []

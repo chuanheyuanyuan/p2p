@@ -11,9 +11,9 @@ class Settings(BaseSettings):
     loan_base_url: str = 'http://127.0.0.1:8083'
     payment_base_url: str = 'http://127.0.0.1:8084'
     user_base_url: str = 'http://127.0.0.1:8081'
-    http_timeout: float = Field(default=5.0, ge=1, le=60)
-    loan_list_limit: int = Field(default=20, ge=1, le=100)
-    recommendation_limit: int = Field(default=3, ge=1, le=10)
+    http_timeout: float = Field(default=5.0, ge=1, le=60, description='HTTP timeout in seconds')
+    loan_list_limit: int = Field(default=20, ge=1, le=100, description='Max loans fetched per borrower')
+    recommendation_limit: int = Field(default=3, ge=1, le=10, description='Product recommendations count')
 
 
 @lru_cache

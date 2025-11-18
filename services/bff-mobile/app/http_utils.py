@@ -13,8 +13,11 @@ def translate_http_error(error: Exception) -> None:
             detail = error.response.json()
         except ValueError:
             detail = error.response.text
-        message = detail or error.response.reason_phrase or 'downstream error'
+        message = detail or error.response.reason_phrase or '下游服务返回错误'
         raise HTTPException(status_code=error.response.status_code, detail=message) from error
     if isinstance(error, RequestError):
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(error)) from error
-    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='unexpected error')
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f'下游服务不可达: {error}',
+        ) from error
+    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='未知错误')
