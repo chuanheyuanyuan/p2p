@@ -26,6 +26,8 @@
 - Mock 数据位于 `src/mocks/data.ts`，若无真实 BFF 会在 `services/api` 中自动 fallback。
 - Dashboard & Daily Stats（M2）已接入 `fetchDashboardOverview`、`fetchDailyStats`，支持错误提示、Skeleton、导出任务触发（`exportDailyStats`）。
 - Applications（M3）接入 `/admin/v1/applications/*`，提供筛选（Zustand 持久化）、导出任务（`exportApplications`），以及客户/审批摘要/历史/凭证多 Tab 详情。
+- Collections（M6）在 `/collections` 整合催收九模块：案件池 + Drawer 工作台、绩效看板、坐席管理、外呼记录、号码池与语音任务等，全部走 React Query。
+- OpsConfig（M7）扩展多 Tab（产品配置、等级策略、渠道链接、消息模板、审批规则、App 版本），在无后端时依赖 mock 数据并支持本地新增/启停模拟。
 
 ## 🧪 Testing
 - `npm run test` —— Vitest + React Testing Library，当前覆盖 Sidebar RBAC 过滤（`src/components/__tests__/Sidebar.test.tsx`）。

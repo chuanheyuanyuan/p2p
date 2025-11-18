@@ -6,6 +6,12 @@ import type {
   CollectionCaseDetail,
   DailyStat,
   DashboardStats,
+  OpsProductConfig,
+  GradeConfig,
+  ChannelLinkConfig,
+  MessageTemplateConfig,
+  ApprovalRuleConfig,
+  ReleaseNote,
   UserProfile
 } from '../mocks/data';
 import {
@@ -17,6 +23,12 @@ import {
   dashboardMock,
   defaultSessionMock,
   dailyStatsMock,
+  opsProductsMock,
+  gradeConfigsMock,
+  channelLinksMock,
+  messageTemplatesMock,
+  approvalRulesMock,
+  releasesMock,
   userProfilesMock
 } from '../mocks/data';
 import type { LoginPayload, LoginResponse } from '../types/auth';
@@ -200,5 +212,59 @@ export async function exportDailyStats(params: DailyStatsQuery): Promise<{ taskI
   } catch (error) {
     console.warn('exportDailyStats fallback', error);
     return { taskId: `mock-export-${Date.now()}` };
+  }
+}
+
+export async function fetchOpsProducts(): Promise<OpsProductConfig[]> {
+  try {
+    return await request('/admin/v1/ops/products');
+  } catch (error) {
+    console.warn('fetchOpsProducts fallback', error);
+    return opsProductsMock;
+  }
+}
+
+export async function fetchGradeConfigs(): Promise<GradeConfig[]> {
+  try {
+    return await request('/admin/v1/ops/grades');
+  } catch (error) {
+    console.warn('fetchGradeConfigs fallback', error);
+    return gradeConfigsMock;
+  }
+}
+
+export async function fetchChannelLinks(): Promise<ChannelLinkConfig[]> {
+  try {
+    return await request('/admin/v1/channel/links');
+  } catch (error) {
+    console.warn('fetchChannelLinks fallback', error);
+    return channelLinksMock;
+  }
+}
+
+export async function fetchMessageTemplates(): Promise<MessageTemplateConfig[]> {
+  try {
+    return await request('/admin/v1/ops/messages');
+  } catch (error) {
+    console.warn('fetchMessageTemplates fallback', error);
+    return messageTemplatesMock;
+  }
+}
+
+export async function fetchApprovalRules(): Promise<ApprovalRuleConfig[]> {
+  try {
+    return await request('/admin/v1/ops/approval-rules');
+  } catch (error) {
+    console.warn('fetchApprovalRules fallback', error);
+    return approvalRulesMock;
+  }
+}
+
+export async function fetchAppReleases(): Promise<ReleaseNote[]> {
+  try {
+    return await request('/admin/v1/ops/releases');
+  } catch (error) {
+    console.warn('fetchAppReleases fallback', error);
+    return releasesMock;
   }
 }

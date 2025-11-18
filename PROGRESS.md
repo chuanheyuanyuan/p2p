@@ -95,6 +95,11 @@
 - 新增 `services/api.exportApplications`、`utils/format.ts`（mask/currency）及对应 Vitest，mock 数据同步扩展字段与 `applicationDetailsMock`。
 - 文档/示例同步：`README.md`、`README.vibe.md`、`apps/bff-admin/sample.http`、`临时文件`、`整体开发计划.md`，方便后续 BFF 对接。
 
+### admin-web（T19 · M7 运营配置 & App 升级）
+- `/ops` 页面重构为多 Tab：产品配置、等级管理、渠道链接、消息模板、审批规则、App 版本清单，全部通过 React Query 拉取 mock 数据并允许本地新增/启停模拟。
+- `mocks/data.ts` 增加 `opsProductsMock`、`gradeConfigsMock`、`channelLinksMock`、`messageTemplatesMock`、`approvalRulesMock`，`services/api.ts` 提供对应 fetch fallback。
+- `README.md`、`README.vibe.md`、`apps/bff-admin/sample.http`、`整体开发计划.md` 与 `临时文件` 更新 M7 功能说明，便于后续 BFF 接口联调。
+
 ## 运行提示与偏好
 - 所有服务都需在对应目录下 `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`。
 - Python 3.9 不支持 `| None`，请使用 `Optional[...]` 并导入 `typing.Optional`。

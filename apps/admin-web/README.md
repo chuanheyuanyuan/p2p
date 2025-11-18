@@ -42,7 +42,7 @@ src/
 - 催收工作台：案件列表、Drawer 工作台、PTP/外呼/跟进表单，支持本地记录。
 - Dashboard：接入 `/admin/v1/dashboard`（mock fallback），展示 KPI、逾期概览、催回进度、今日指标、新客转化率，支持错误提示与重试。
 - Daily Stats：对接 `/admin/v1/reports/daily`，提供时间/渠道/复借筛选、指标汇总、导出任务触发。
-- Ops Config / App 升级等基础页面。
+- 运维配置（M7）：Ops Config 页面提供产品配置、等级策略、渠道链接、消息模板、审批规则与 App 版本列表，可直接查看与模拟新增操作。
 
 ## 登录与权限
 

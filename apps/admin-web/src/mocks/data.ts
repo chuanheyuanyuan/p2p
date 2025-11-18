@@ -244,6 +244,54 @@ export interface UserProfile {
   blacklisted: boolean;
 }
 
+export interface OpsProductConfig {
+  productId: string;
+  name: string;
+  minAmount: number;
+  maxAmount: number;
+  termOptions: string;
+  apr: number;
+  allowExtension: boolean;
+  status: '启用' | '停用';
+}
+
+export interface GradeConfig {
+  grade: string;
+  maxCredit: number;
+  interestDiscount: number;
+  autoUpgradeDays: number;
+  rules: string[];
+}
+
+export interface ChannelLinkConfig {
+  id: string;
+  name: string;
+  channel: string;
+  status: '上线' | '停用';
+  conversion: number;
+  budget: number;
+  updatedAt: string;
+}
+
+export interface MessageTemplateConfig {
+  id: string;
+  name: string;
+  channel: 'SMS' | 'WhatsApp' | 'Push';
+  active: boolean;
+  preview: string;
+  variables: string[];
+}
+
+export interface ApprovalRuleConfig {
+  id: string;
+  name: string;
+  stage: '机审' | '人审';
+  condition: string;
+  action: string;
+  owner: string;
+  updatedAt: string;
+}
+
 export interface AdminAccount {
   id: string;
   username: string;
@@ -797,5 +845,132 @@ export const userProfilesMock: Record<string, UserProfile> = {
     blacklisted: false
   }
 };
+
+export const opsProductsMock: OpsProductConfig[] = [
+  {
+    productId: 'P-PLUS-01',
+    name: 'InsCash Plus',
+    minAmount: 150,
+    maxAmount: 1500,
+    termOptions: '7D / 14D',
+    apr: 18.5,
+    allowExtension: true,
+    status: '启用'
+  },
+  {
+    productId: 'P-MAX-01',
+    name: 'InsCash Max',
+    minAmount: 500,
+    maxAmount: 5000,
+    termOptions: '30D / 45D / 60D',
+    apr: 22.3,
+    allowExtension: true,
+    status: '启用'
+  },
+  {
+    productId: 'P-EXP-01',
+    name: 'InsCash Express',
+    minAmount: 50,
+    maxAmount: 300,
+    termOptions: '7D',
+    apr: 15.2,
+    allowExtension: false,
+    status: '停用'
+  }
+];
+
+export const gradeConfigsMock: GradeConfig[] = [
+  { grade: 'Level 1', maxCredit: 300, interestDiscount: 0, autoUpgradeDays: 45, rules: ['注册完成', 'KYC 提交'] },
+  { grade: 'Level 2', maxCredit: 800, interestDiscount: 5, autoUpgradeDays: 30, rules: ['成功还款 ≥1 次'] },
+  { grade: 'Level 3', maxCredit: 1500, interestDiscount: 10, autoUpgradeDays: 20, rules: ['成功还款 ≥3 次', '无逾期'] },
+  { grade: 'Level 4', maxCredit: 2500, interestDiscount: 15, autoUpgradeDays: 15, rules: ['复借 5 次以上', '无逾期'] }
+];
+
+export const channelLinksMock: ChannelLinkConfig[] = [
+  {
+    id: 'CH-AD-GG',
+    name: 'Google Ads Ghana',
+    channel: 'Google',
+    status: '上线',
+    conversion: 12.5,
+    budget: 1200,
+    updatedAt: '2025-10-20 10:05'
+  },
+  {
+    id: 'CH-AD-FB',
+    name: 'Facebook Lookalike',
+    channel: 'Facebook',
+    status: '上线',
+    conversion: 9.8,
+    budget: 900,
+    updatedAt: '2025-10-19 22:10'
+  },
+  {
+    id: 'CH-AFF-001',
+    name: 'Affiliate Network',
+    channel: 'Affiliate',
+    status: '停用',
+    conversion: 3.2,
+    budget: 500,
+    updatedAt: '2025-10-18 18:30'
+  }
+];
+
+export const messageTemplatesMock: MessageTemplateConfig[] = [
+  {
+    id: 'MSG-OTP',
+    name: '验证码短信',
+    channel: 'SMS',
+    active: true,
+    preview: '您的验证码为 {code}，5 分钟内有效。',
+    variables: ['code']
+  },
+  {
+    id: 'MSG-DUE',
+    name: '到期提醒 WhatsApp',
+    channel: 'WhatsApp',
+    active: true,
+    preview: '{name}，您 {dueDate} 到期的账单金额 {amount}，请及时还款。',
+    variables: ['name', 'dueDate', 'amount']
+  },
+  {
+    id: 'MSG-PROMO',
+    name: '复借优惠 Push',
+    channel: 'Push',
+    active: false,
+    preview: '完成上一笔还款即可获得 {discount}% 利率优惠！',
+    variables: ['discount']
+  }
+];
+
+export const approvalRulesMock: ApprovalRuleConfig[] = [
+  {
+    id: 'RULE-001',
+    name: '高风险地区自动拒绝',
+    stage: '机审',
+    condition: '定位命中黑名单区域',
+    action: '自动拒绝',
+    owner: 'RiskOps',
+    updatedAt: '2025-10-19 12:15'
+  },
+  {
+    id: 'RULE-002',
+    name: '大额人工复核',
+    stage: '人审',
+    condition: '额度 > 2000 或重复申请≤7天',
+    action: '转人工队列',
+    owner: 'LoanOps',
+    updatedAt: '2025-10-18 19:22'
+  },
+  {
+    id: 'RULE-003',
+    name: '质量抽检',
+    stage: '人审',
+    condition: '随机 5% 通过单',
+    action: '指派质检员',
+    owner: 'QA Team',
+    updatedAt: '2025-10-16 09:10'
+  }
+];
 import type { AdminRole } from '../constants/roles';
 import type { LoginResponse } from '../types/auth';
