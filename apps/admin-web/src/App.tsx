@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import AdminLayout from './layouts/AdminLayout';
 import Dashboard from './pages/Dashboard';
 import DailyStats from './pages/DailyStats';
+import ReportCenter from './pages/ReportCenter';
 import Applications from './pages/Applications';
 import ApplicationDetail from './pages/ApplicationDetail';
 import Collections from './pages/Collections';
@@ -33,6 +34,14 @@ const App = () => (
           element={
             <RoleGuard allowedRoles={routeRoleMap['/daily-stats']}>
               <DailyStats />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="report-center"
+          element={
+            <RoleGuard allowedRoles={routeRoleMap['/report-center']}>
+              <ReportCenter />
             </RoleGuard>
           }
         />

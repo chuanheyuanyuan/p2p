@@ -44,6 +44,51 @@ export interface DailyStat {
   amount: number;
 }
 
+export interface ReportSummaryItem {
+  label: string;
+  value: string;
+  delta: number;
+  description?: string;
+}
+
+export interface OverdueMigrationRow {
+  stage: string;
+  todayRate: number;
+  yesterdayRate: number;
+  change: number;
+  note?: string;
+}
+
+export interface ChannelFunnelRow {
+  channel: string;
+  installs: number;
+  regs: number;
+  applies: number;
+  disburses: number;
+  conversion: number;
+}
+
+export interface ReborrowRateRow {
+  segment: string;
+  rate: number;
+  change: number;
+  volume: number;
+}
+
+export interface ReportCenterData {
+  summary: ReportSummaryItem[];
+  overdueMigration: OverdueMigrationRow[];
+  channelFunnel: ChannelFunnelRow[];
+  reborrowRates: ReborrowRateRow[];
+  filters: {
+    businessDate: string;
+    channel?: string | null;
+    product?: string | null;
+  };
+  lastUpdated: string;
+  notes: string[];
+}
+
 export interface ApplicationRecord {
   id: string;
   userId: string;
@@ -972,5 +1017,42 @@ export const approvalRulesMock: ApprovalRuleConfig[] = [
     updatedAt: '2025-10-16 09:10'
   }
 ];
+
+export const reportCenterMock: ReportCenterData = {
+  summary: [
+    { label: '当日申请', value: '1,287', delta: 5, description: '较昨日 +5%' },
+    { label: '放款金额 (GHS)', value: '425,000', delta: 8, description: '较昨日 +8%' },
+    { label: '首逾率 (D0)', value: '38%', delta: -2, description: '较昨日 -2pp' },
+    { label: '复借率', value: '28%', delta: 3, description: '较昨日 +3pp' }
+  ],
+  overdueMigration: [
+    { stage: 'D0→D1', todayRate: 38, yesterdayRate: 40, change: -2, note: '新客批次质量改善' },
+    { stage: 'D1→D7', todayRate: 21, yesterdayRate: 22, change: -1, note: 'PTP 回收力度待提升' },
+    { stage: 'D7→D15', todayRate: 12, yesterdayRate: 11, change: 1, note: 'D7 案件堆积' },
+    { stage: 'D15+', todayRate: 7, yesterdayRate: 6, change: 1, note: '需触发外包策略' }
+  ],
+  channelFunnel: [
+    { channel: 'Google Ads', installs: 820, regs: 410, applies: 287, disburses: 145, conversion: 17.7 },
+    { channel: 'Facebook Ads', installs: 690, regs: 330, applies: 210, disburses: 104, conversion: 15.1 },
+    { channel: 'Affiliate', installs: 320, regs: 98, applies: 70, disburses: 31, conversion: 9.7 }
+  ],
+  reborrowRates: [
+    { segment: '高价值用户 (Level4+)', rate: 41, change: 2, volume: 380 },
+    { segment: '标准用户 (Level2-3)', rate: 24, change: 1, volume: 610 },
+    { segment: '新客', rate: 6, change: 0, volume: 297 }
+  ],
+  filters: {
+    businessDate: '2025-10-20',
+    channel: null,
+    product: null
+  },
+  lastUpdated: '2025-10-20 09:45:00',
+  notes: [
+    '昨日渠道预算压缩 8%，今日 Google Ads 投放恢复后放款金额回升。',
+    'D7→D15 档案件增加，需要与催收团队同步加强 PTP 跟进。',
+    '复借用户贡献 63% 放款金额，建议继续保持复借 push 节奏。'
+  ]
+};
+
 import type { AdminRole } from '../constants/roles';
 import type { LoginResponse } from '../types/auth';

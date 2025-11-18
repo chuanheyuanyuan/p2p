@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import {
   AppstoreOutlined,
+  BarChartOutlined,
   DashboardOutlined,
   DatabaseOutlined,
   FileTextOutlined,
@@ -36,6 +37,7 @@ export const navSections: NavSection[] = [
     items: [
       { key: '/', label: '首页', icon: <DashboardOutlined />, roles: allRoles },
       { key: '/daily-stats', label: '数据大盘', icon: <DatabaseOutlined />, roles: analyticsRoles },
+      { key: '/report-center', label: '报表中心', icon: <BarChartOutlined />, roles: analyticsRoles },
       { key: '/applications', label: '申请管理', icon: <FileTextOutlined />, roles: approvalRoles }
     ]
   },
@@ -61,6 +63,7 @@ export const navKeyMap = new Map(navSections.flatMap((section) => section.items.
 export const routeRoleMap: Record<string, AdminRole[]> = {
   '/': allRoles,
   '/daily-stats': analyticsRoles,
+  '/report-center': analyticsRoles,
   '/applications': approvalRoles,
   '/applications/:id': approvalRoles,
   '/users/:userId': ['super_admin', 'loan_officer', 'risk_officer', 'collector_manager'],

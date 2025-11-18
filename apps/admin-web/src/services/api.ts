@@ -12,7 +12,8 @@ import type {
   MessageTemplateConfig,
   ApprovalRuleConfig,
   ReleaseNote,
-  UserProfile
+  UserProfile,
+  ReportCenterData
 } from '../mocks/data';
 import {
   applicationsMock,
@@ -29,7 +30,8 @@ import {
   messageTemplatesMock,
   approvalRulesMock,
   releasesMock,
-  userProfilesMock
+  userProfilesMock,
+  reportCenterMock
 } from '../mocks/data';
 import type { LoginPayload, LoginResponse } from '../types/auth';
 
@@ -175,6 +177,12 @@ export interface DailyStatsQuery {
   pageSize?: number;
 }
 
+export interface ReportCenterQuery {
+  businessDate: string;
+  channel?: string;
+  product?: string;
+}
+
 export async function fetchDailyStats(params: DailyStatsQuery): Promise<PaginatedResponse<DailyStat>> {
   try {
     const search = new URLSearchParams();
@@ -187,6 +195,32 @@ export async function fetchDailyStats(params: DailyStatsQuery): Promise<Paginate
     return {
       list: dailyStatsMock,
       total: dailyStatsMock.length
+    };
+  }
+}
+
+export async function fetchReportCenter(params: ReportCenterQuery): Promise<ReportCenterData> {
+  try {
+    const search = new URLSearchParams();
+    search.append('businessDate', params.businessDate);
+    if (params.channel && params.channel !== 'all') {
+      search.append('channel', params.channel);
+    }
+    if (params.product && params.product !== 'all') {
+      search.append('product', params.product);
+    }
+    const query = search.toString();
+    const endpoint = query ? `/admin/v1/reports/center?${query}` : '/admin/v1/reports/center';
+    return await request<ReportCenterData>(endpoint);
+  } catch (error) {
+    console.warn('fetchReportCenter fallback', error);
+    return {
+      ...reportCenterMock,
+      filters: {
+        businessDate: params.businessDate,
+        channel: params.channel ?? null,
+        product: params.product ?? null
+      }
     };
   }
 }

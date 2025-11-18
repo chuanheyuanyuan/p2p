@@ -95,6 +95,12 @@
 - 新增 `services/api.exportApplications`、`utils/format.ts`（mask/currency）及对应 Vitest，mock 数据同步扩展字段与 `applicationDetailsMock`。
 - 文档/示例同步：`README.md`、`README.vibe.md`、`apps/bff-admin/sample.http`、`临时文件`、`整体开发计划.md`，方便后续 BFF 对接。
 
+### admin-web（T19 · M8 报表中心首版）
+- 新增 `ReportCenter` 页面与 `/report-center` 菜单，聚合平台 KPI、逾期迁移率、渠道漏斗、复借率，并展示分析备注。
+- 过滤条件支持业务日期/渠道/产品，通过 React Query + Ant Design Form 触发 `fetchReportCenter`，与 bff-admin `/admin/v1/reports/center` 对齐，失败时 fallback 至 `reportCenterMock`。
+- `services/api.ts` 增加 `ReportCenterQuery`/`fetchReportCenter`，`mocks/data.ts` 扩展 `ReportCenterData` 模型与 mock 数据，侧边栏/路由加入权限守卫（analyst/ops）。
+- README 更新“当前特性”，强调 M8 报表中心预研版及数据来源/刷新节奏，并跑通 `npm run test` 验证。
+
 ### admin-web（T19 · M7 运营配置 & App 升级）
 - `/ops` 页面重构为多 Tab：产品配置、等级管理、渠道链接、消息模板、审批规则、App 版本清单，全部通过 React Query 拉取 mock 数据并允许本地新增/启停模拟。
 - `mocks/data.ts` 增加 `opsProductsMock`、`gradeConfigsMock`、`channelLinksMock`、`messageTemplatesMock`、`approvalRulesMock`，`services/api.ts` 提供对应 fetch fallback。
