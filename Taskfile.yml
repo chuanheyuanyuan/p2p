@@ -55,7 +55,7 @@ tasks:
     desc: 启动 Mobile BFF。
     cmds:
       - |
-        SERVICE_PATH="apps/bff-mobile"
+        SERVICE_PATH="services/bff-mobile"
         PORT=8001
         if [ -f "$SERVICE_PATH/app/main.py" ]; then
           (cd "$SERVICE_PATH" && {{.UV}} run uvicorn app.main:app --reload --port $PORT)

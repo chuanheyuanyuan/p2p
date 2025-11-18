@@ -1,0 +1,1 @@
+"""Mobile BFF application package."""
