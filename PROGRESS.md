@@ -76,6 +76,7 @@
   - `GET /admin/v1/applications`/`/{id}`/`/export`：输出申请列表、详情（含审批历史/文档）与导出任务号；`GET /admin/v1/users/{userId}` 聚合设备/KYC 档案。
   - `GET /admin/v1/collections/cases`/`/{id}`：加载催收案件、行动、PTP 记录；`GET /admin/v1/dashboard`、`/reports/daily`、`POST /reports/daily/export` 提供运营看板与日报。
   - README.vibe/sample.http 更新，新增 `pytest services/bff-admin/tests/test_bff_admin.py` 覆盖登录、申请、催收、报表串联流。
+  - 认证链路升级：新增 `admin.db` 存储管理员账号，启动时自动 seed 并使用 PBKDF2+salt 校验密码；更新 `apps/bff-admin/sample.http`、`README`、`PROGRESS` 说明 curl 自检流程，`pytest services/bff-admin/tests/test_bff_admin.py` 覆盖 `/auth/login` 与 `/auth/me` 场景。
 - `bff-mobile`（T17）上线借款端聚合层：
   - 目录：`services/bff-mobile/`，端口 8001，依赖 loan-svc 聚合 borrower Dashboard 与贷款列表，`POST /mobile/v1/loans` 自动注入 `userId` 并透传幂等头。
   - `GET /mobile/v1/dashboard` 返回应还金额、活动贷款与产品推荐；`GET /mobile/v1/loans` 列出借款记录，所有接口校验 `X-User-Id`。

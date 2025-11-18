@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .admin_store import initialize_admin_store
 from .config import get_settings
 from .routers import applications, auth, collections, finance, reports, users
 
@@ -23,6 +24,11 @@ app.include_router(users.router)
 app.include_router(collections.router)
 app.include_router(finance.router)
 app.include_router(reports.router)
+
+
+@app.on_event('startup')
+def _startup() -> None:
+    initialize_admin_store(settings)
 
 
 @app.get('/healthz')
