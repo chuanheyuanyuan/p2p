@@ -1,14 +1,20 @@
+# 先运行“Admin Login”，将返回的 accessToken 粘贴到下方变量
+@adminToken = REPLACE_WITH_ACCESS_TOKEN
+
 ### List Applications
 GET http://localhost:8002/admin/v1/applications?status=APPROVED&page=1&pageSize=20
 Accept: application/json
+Authorization: Bearer {{adminToken}}
 
 ### Application Detail
 GET http://localhost:8002/admin/v1/applications/LN202510200001
 Accept: application/json
+Authorization: Bearer {{adminToken}}
 
 ### Export Applications
 POST http://localhost:8002/admin/v1/applications/export
 Content-Type: application/json
+Authorization: Bearer {{adminToken}}
 Accept: application/json
 
 {
@@ -21,14 +27,17 @@ Accept: application/json
 ### Dashboard Overview
 GET http://localhost:8002/admin/v1/dashboard
 Accept: application/json
+Authorization: Bearer {{adminToken}}
 
 ### Query Daily Stats
 GET http://localhost:8002/admin/v1/reports/daily?startDate=2025-10-16&endDate=2025-10-20&channel=all&repeat=all
 Accept: application/json
+Authorization: Bearer {{adminToken}}
 
 ### Export Daily Stats
 POST http://localhost:8002/admin/v1/reports/daily/export
 Content-Type: application/json
+Authorization: Bearer {{adminToken}}
 Accept: application/json
 
 {
@@ -51,33 +60,39 @@ Accept: application/json
 ### Current Session
 GET http://localhost:8002/admin/v1/auth/me
 Accept: application/json
-Authorization: Bearer mock-admin-token
+Authorization: Bearer {{adminToken}}
 
 ### List Pending Loans
 GET http://localhost:8002/admin/v1/loans?status=SUBMITTED
 Content-Type: application/json
+Authorization: Bearer {{adminToken}}
 Accept: application/json
 
 
 ### Finance Disbursement List
 GET http://localhost:8002/admin/v1/finance/disbursements?status=FAILED&channel=Flutterwave&startDate=2025-10-20&endDate=2025-10-20
 Accept: application/json
+Authorization: Bearer {{adminToken}}
 
 ### Retry Disbursement
 POST http://localhost:8002/admin/v1/finance/disbursements/DISB-20251020018/retry
 Accept: application/json
+Authorization: Bearer {{adminToken}}
 
 ### Finance Repayments
 GET http://localhost:8002/admin/v1/finance/repayments?status=PENDING&channel=Bank%20Transfer
 Accept: application/json
+Authorization: Bearer {{adminToken}}
 
 ### Reconciliation Diff
 GET http://localhost:8002/admin/v1/finance/reconciliation?type=loan&status=OPEN
 Accept: application/json
+Authorization: Bearer {{adminToken}}
 
 ### Export Reconciliation
 POST http://localhost:8002/admin/v1/finance/reconciliation/export
 Content-Type: application/json
+Authorization: Bearer {{adminToken}}
 Accept: application/json
 
 {
@@ -90,6 +105,7 @@ Accept: application/json
 ### Assign Case
 POST http://localhost:8002/admin/v1/cases/assign
 Content-Type: application/json
+Authorization: Bearer {{adminToken}}
 Accept: application/json
 
 {
@@ -100,43 +116,54 @@ Accept: application/json
 ### Collection Performance
 GET http://localhost:8002/admin/v1/collections/performance
 Accept: application/json
+Authorization: Bearer {{adminToken}}
 
 ### Collector Metrics
 GET http://localhost:8002/admin/v1/collections/agents?team=Team%20A
 Accept: application/json
+Authorization: Bearer {{adminToken}}
 
 ### Number Pool
 GET http://localhost:8002/admin/v1/collections/number-pool?status=AVAILABLE
 Accept: application/json
+Authorization: Bearer {{adminToken}}
 
 ### Voice Tasks
 GET http://localhost:8002/admin/v1/collections/voice-tasks
 Accept: application/json
+Authorization: Bearer {{adminToken}}
 
 ### Call Records
 GET http://localhost:8002/admin/v1/collections/call-records?agent=Sitsofe&startDate=2025-10-18&endDate=2025-10-20
 Accept: application/json
+Authorization: Bearer {{adminToken}}
 
 ### Ops Products
 GET http://localhost:8002/admin/v1/ops/products
 Accept: application/json
+Authorization: Bearer {{adminToken}}
 
 ### Grade Configs
 GET http://localhost:8002/admin/v1/ops/grades
 Accept: application/json
+Authorization: Bearer {{adminToken}}
 
 ### Channel Links
 GET http://localhost:8002/admin/v1/channel/links
 Accept: application/json
+Authorization: Bearer {{adminToken}}
 
 ### Message Templates
 GET http://localhost:8002/admin/v1/ops/messages
 Accept: application/json
+Authorization: Bearer {{adminToken}}
 
 ### Approval Rules
 GET http://localhost:8002/admin/v1/ops/approval-rules
 Accept: application/json
+Authorization: Bearer {{adminToken}}
 
 ### App Releases
 GET http://localhost:8002/admin/v1/ops/releases
 Accept: application/json
+Authorization: Bearer {{adminToken}}

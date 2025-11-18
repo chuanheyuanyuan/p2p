@@ -78,6 +78,8 @@ class Settings(BaseSettings):
     user_db_path: Path = Field(default=SERVICES_DIR / 'user-svc' / 'user.db')
     max_application_rows: int = 1000
     ledger_db_path: Path = Field(default=SERVICES_DIR / 'ledger-svc' / 'ledger.db')
+    admin_db_path: Path = Field(default=BASE_DIR / 'admin.db')
+    admin_password_salt: str = 'bff-admin-static-salt'
 
 @lru_cache
 def get_settings() -> Settings:
