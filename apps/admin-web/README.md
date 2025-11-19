@@ -6,11 +6,11 @@ React + Ant Design 管理后台原型，支持“首页、数据大盘、申请�
 
 ```bash
 cd apps/admin-web
-cp .env.development.example .env.development # 若已存在则忽略
+cp .env.development.example .env.development
 npm install
 npm run dev -- --host
 ```
-访问 `http://localhost:5173` 即可预览。若要预览打包结果：
+`.env.development` 中默认指向 bff-admin（`http://localhost:8002`），可直接联调。访问 `http://localhost:5173` 即可预览。若要预览打包结果：
 
 ```bash
 npm run build && npm run preview -- --host
@@ -32,11 +32,12 @@ src/
 
 ## 环境变量
 
-- `VITE_API_BASE_URL`：后端 BFF 地址（例如 `http://localhost:3000`）。未配置或请求失败时自动回退到 `mocks/data.ts`。
+- `VITE_API_BASE_URL`：后端 BFF 地址（默认 `http://localhost:8002`）。指向 `services/bff-admin` 即可命中真实接口。
+- `VITE_USE_MOCKS`：是否允许服务在请求失败时回退到 `src/mocks/data.ts`（默认 `false`，仅当需要离线演示时设置为 `true`）。
 
 ## 当前特性
 
-- 申请管理：对接 BFF `/admin/v1/auth|applications`，支持贷款编号/关键字/手机号/时间/渠道/产品/状态/App 版本/复借等多维筛选，筛选条件通过 Zustand 持久化，支持批量选中后发起导出或复核操作，导出按钮会创建后台任务。
+- 申请管理：对接 BFF `/admin/v1/auth|applications`，支持贷款编号/关键字/手机号/时间/渠道/产品/状态/App 版本/复借等多维筛选，筛选条件通过 Zustand 持久化，支持批量选中后发起导出或复核操作，导出按钮会创建后台任务；默认禁止 mock 回退，确保命中真实后端。
 - 申请详情：分为“贷款信息/还款概览/客户画像/审批摘要/审批流程/历史/凭证”多 Tab，展示剩余本金、风险评分、命中原因、时间线及凭证下载入口。
 - 用户档案：Borrower 360 视图，覆盖身份信息、贷款/还款概览、KYC 记录、设备授权、催收状态、标签/风险提示等。
 - Finance 中心：`/finance` 页面聚合 `/admin/v1/finance/disbursements|repayments|reconciliations`，包含“放款管理/还款管理/对账差异”三视图，支持状态/渠道/日期筛选、金额汇总、放款失败重试和差异导出，mock fallback 实现全流程演示。
@@ -59,6 +60,14 @@ src/
 | `analyst` | `analyst123` | 数据分析，仅可见报表菜单 |
 | `finance.lead` | `finance123` | 财务放/还款对账菜单 |
 | `super.admin` / `super.admin@inscash.com` | `super123` | 超级管理员（拥有所有菜单） |
+
+## 联调指南（Applications M3）
+
+1. 在 `services/bff-admin` 目录运行 `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && uvicorn app.main:app --reload --port 8002`，或执行 `task run:bff-admin`。
+2. `cd apps/admin-web && cp .env.development.example .env.development`，确认其中 `VITE_API_BASE_URL=http://localhost:8002`、`VITE_USE_MOCKS=false`。
+3. `npm run dev -- --host` 启动前端，登录账号 `ops.lead/admin123`。
+4. 进入“申请管理”页面，使用 `手机号=1123`、`渠道=Google Ads`、`复借=是` 进行筛选，可命中 BFF 返回的 `LN123`；点击贷款编号可查看详情并验证 `documents` 下载链接来自 `/admin/v1/applications/{id}` 的真实数据。
+5. 若需离线演示，可将 `VITE_USE_MOCKS` 设置为 `true` 再次启动，此时才会启用 `src/mocks/data.ts`。
 
 ## 测试
 

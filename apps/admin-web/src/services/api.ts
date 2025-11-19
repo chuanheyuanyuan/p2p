@@ -41,6 +41,8 @@ import {
 } from '../mocks/data';
 import type { LoginPayload, LoginResponse } from '../types/auth';
 
+const ENABLE_MOCKS = `${import.meta.env.VITE_USE_MOCKS ?? ''}`.toLowerCase() === 'true';
+
 interface PaginatedResponse<T> {
   list: T[];
   total: number;
@@ -70,6 +72,9 @@ export async function adminLogin(payload: LoginPayload): Promise<LoginResponse> 
       body: JSON.stringify(payload)
     });
   } catch (error) {
+    if (!ENABLE_MOCKS) {
+      throw error instanceof Error ? error : new Error('登录失败，请检查 bff-admin 是否可用');
+    }
     console.warn('adminLogin fallback to mock', error);
     const matched = adminAccountsMock.find(
       (account) => account.username === payload.username || account.email === payload.username
@@ -92,6 +97,9 @@ export async function fetchCurrentSession(): Promise<LoginResponse> {
   try {
     return await request<LoginResponse>('/admin/v1/auth/me');
   } catch (error) {
+    if (!ENABLE_MOCKS) {
+      throw error instanceof Error ? error : new Error('获取会话失败');
+    }
     console.warn('fetchCurrentSession fallback', error);
     return defaultSessionMock;
   }
@@ -116,6 +124,9 @@ export async function fetchApplications(params: ApplicationQuery): Promise<Pagin
     });
     return await request(`/admin/v1/applications?${search.toString()}`);
   } catch (error) {
+    if (!ENABLE_MOCKS) {
+      throw error instanceof Error ? error : new Error('拉取申请列表失败');
+    }
     console.warn('fetchApplications fallback to mock', error);
     return { list: applicationsMock, total: applicationsMock.length };
   }
@@ -125,6 +136,9 @@ export async function fetchApplicationById(id: string): Promise<ApplicationDetai
   try {
     return await request(`/admin/v1/applications/${id}`);
   } catch (error) {
+    if (!ENABLE_MOCKS) {
+      throw error instanceof Error ? error : new Error(`拉取申请 ${id} 失败`);
+    }
     console.warn(`fetchApplicationById(${id}) fallback`, error);
     const detail = applicationDetailsMock[id];
     if (!detail) throw error;
@@ -259,6 +273,9 @@ export async function exportApplications(params: ApplicationQuery): Promise<{ ta
       body: JSON.stringify(params)
     });
   } catch (error) {
+    if (!ENABLE_MOCKS) {
+      throw error instanceof Error ? error : new Error('导出申请失败');
+    }
     console.warn('exportApplications fallback', error);
     return { taskId: `mock-application-export-${Date.now()}` };
   }

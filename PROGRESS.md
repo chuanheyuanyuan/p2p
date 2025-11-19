@@ -104,6 +104,7 @@
 - `ApplicationDetail` 拆分为“概览（含指标卡）+贷款信息+还款概览+客户画像+审批摘要+审批流程+历史+凭证”多 Tab，展示 BFF 返回的剩余本金、原始金额、风险评分、命中原因以及下载链接。
 - `services/api.ts`、`mocks/data.ts` 对齐 BFF 字段（productId/outstandingAmount/lastPaidAt 等），Status/Tag 渲染逻辑同步更新；Vitest 持续覆盖格式化/Sidebar 用例。
 - bff-admin 新增可配置筛选参数（startDate/endDate/product/channel/repeat 等）与合成字段（phone/channel/level），pytest 用例补充 repeat/date 过滤，README/临时文件同步说明。
+- Admin Web 默认直连 bff-admin：`.env.development` 预置 `VITE_API_BASE_URL=http://localhost:8002`、`VITE_USE_MOCKS=false`，`services/api.ts` 在登录/Applications 场景禁止自动 fallback，README/README.vibe 更新联调步骤与筛选/详情自检脚本，可通过设置 `VITE_USE_MOCKS=true` 才重新启用 mock。
 
 ### admin-web（T19 · M4 Borrower 360 档案）
 - bff-admin `/admin/v1/users/{userId}` 聚合 user-svc、loan-svc、collection-svc，输出 `loanSummary`、`device`、`kyc`、`collectionSummary` 等结构，pytest 新增用户档案断言。
