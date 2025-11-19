@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from uuid import uuid4
 
+from .application_profiles import ensure_application_profiles
 from .config import Settings
 
 
@@ -102,6 +103,39 @@ def _loan_filters(
     return where_clause, params
 
 
+def _load_profiles(settings: Settings) -> Dict[str, dict]:
+    ensure_application_profiles(settings)
+    profiles: Dict[str, dict] = {}
+    if not settings.admin_db_path.exists():
+        return profiles
+    conn = sqlite3.connect(settings.admin_db_path, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    try:
+        rows = conn.execute('SELECT * FROM application_profiles').fetchall()
+    except sqlite3.Error:
+        conn.close()
+        return profiles
+    conn.close()
+    for row in rows:
+        try:
+            tags = json.loads(row['tags_json'] or '[]')
+        except ValueError:
+            tags = []
+        try:
+            documents = json.loads(row['documents_json'] or '[]')
+        except ValueError:
+            documents = []
+        profiles[row['loan_id']] = {
+            'phone': row['phone'],
+            'channel': row['channel'],
+            'reviewer': row['reviewer'],
+            'tags': tags,
+            'documents': documents,
+            'isRepeat': bool(row['is_repeat']),
+        }
+    return profiles
+
+
 def list_applications(
     settings: Settings,
     *,
@@ -143,10 +177,12 @@ def list_applications(
     finally:
         conn.close()
 
+    profiles = _load_profiles(settings)
     products = _load_products(str(settings.loan_db_path.parent / 'products.json'))
     results: List[dict] = []
     for row in rows:
         product_id = row['product_id']
+        profile = profiles.get(row['loan_id'], {})
         record = {
             'id': row['loan_id'],
             'userId': row['user_id'],
@@ -163,6 +199,12 @@ def list_applications(
             'originalAmount': _parse_decimal(row['original_amount']),
             'outstandingAmount': _parse_decimal(row['outstanding_amount']),
             'lastPaidAt': _parse_datetime(row['last_paid_at']),
+            'phone': profile.get('phone'),
+            'channel': profile.get('channel'),
+            'reviewer': profile.get('reviewer'),
+            'tags': profile.get('tags'),
+            'documents': profile.get('documents'),
+            'isRepeat': profile.get('isRepeat'),
         }
         results.append(record)
     return results, int(total or 0)
@@ -186,6 +228,8 @@ def get_application(settings: Settings, loan_id: str) -> Optional[dict]:
         conn.close()
     if not row:
         return None
+    profiles = _load_profiles(settings)
+    profile = profiles.get(loan_id, {})
     products = _load_products(str(settings.loan_db_path.parent / 'products.json'))
     product_id = row['product_id']
     return {
@@ -204,6 +248,12 @@ def get_application(settings: Settings, loan_id: str) -> Optional[dict]:
         'originalAmount': _parse_decimal(row['original_amount']),
         'outstandingAmount': _parse_decimal(row['outstanding_amount']),
         'lastPaidAt': _parse_datetime(row['last_paid_at']),
+        'phone': profile.get('phone'),
+        'channel': profile.get('channel'),
+        'reviewer': profile.get('reviewer'),
+        'tags': profile.get('tags'),
+        'documents': profile.get('documents'),
+        'isRepeat': profile.get('isRepeat'),
     }
 
 
