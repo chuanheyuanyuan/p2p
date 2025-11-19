@@ -148,6 +148,9 @@ def list_applications(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     limit: Optional[int] = None,
+    phone: Optional[str] = None,
+    channel: Optional[str] = None,
+    repeat: Optional[str] = None,
 ) -> Tuple[List[dict], int]:
     conn = _open_connection(settings.loan_db_path)
     if conn is None:
@@ -180,9 +183,23 @@ def list_applications(
     profiles = _load_profiles(settings)
     products = _load_products(str(settings.loan_db_path.parent / 'products.json'))
     results: List[dict] = []
+    phone_filter = phone.lower() if phone else None
+    channel_filter = channel
+    repeat_filter = repeat
     for row in rows:
         product_id = row['product_id']
         profile = profiles.get(row['loan_id'], {})
+        phone_value = profile.get('phone')
+        if phone_filter and phone_filter not in (phone_value or '').lower():
+            continue
+        channel_value = profile.get('channel')
+        if channel_filter and channel_value != channel_filter:
+            continue
+        is_repeat = profile.get('isRepeat')
+        if repeat_filter == 'yes' and not is_repeat:
+            continue
+        if repeat_filter == 'no' and is_repeat:
+            continue
         record = {
             'id': row['loan_id'],
             'userId': row['user_id'],
@@ -199,12 +216,12 @@ def list_applications(
             'originalAmount': _parse_decimal(row['original_amount']),
             'outstandingAmount': _parse_decimal(row['outstanding_amount']),
             'lastPaidAt': _parse_datetime(row['last_paid_at']),
-            'phone': profile.get('phone'),
-            'channel': profile.get('channel'),
+            'phone': phone_value,
+            'channel': channel_value,
             'reviewer': profile.get('reviewer'),
             'tags': profile.get('tags'),
             'documents': profile.get('documents'),
-            'isRepeat': profile.get('isRepeat'),
+            'isRepeat': is_repeat,
         }
         results.append(record)
     return results, int(total or 0)

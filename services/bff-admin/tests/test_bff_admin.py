@@ -18,6 +18,7 @@ def client(tmp_path, monkeypatch):
     collection_db = tmp_path / 'collection.db'
     payment_db = tmp_path / 'payment.db'
     ledger_db = tmp_path / 'ledger.db'
+    admin_db = tmp_path / 'admin.db'
     products_path = tmp_path / 'products.json'
 
     _seed_loan_db(loan_db)
@@ -35,6 +36,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv('BFF_ADMIN_COLLECTION_DB_PATH', str(collection_db))
     monkeypatch.setenv('BFF_ADMIN_PAYMENT_DB_PATH', str(payment_db))
     monkeypatch.setenv('BFF_ADMIN_LEDGER_DB_PATH', str(ledger_db))
+    monkeypatch.setenv('BFF_ADMIN_ADMIN_DB_PATH', str(admin_db))
 
     import app.config as config
 
@@ -301,12 +303,16 @@ def test_applications_and_users(client):
     assert resp.status_code == 200
     data = resp.json()
     assert data['total'] == 3
-    assert data['list'][0]['phone'].startswith('+233-55')
+    rows = {row['id']: row for row in data['list']}
+    assert rows['LN123']['phone'] == '+233-5500-1123'
+    assert rows['LN123']['channel'] == 'Google Ads'
+    assert '复借' in rows['LN123']['tags']
     loan_id = 'LN123'
 
     detail = client.get(f'/admin/v1/applications/{loan_id}', headers=headers)
     assert detail.status_code == 200
     assert detail.json()['application']['id'] == 'LN123'
+    assert detail.json()['documents'][0]['url'] == 'https://static.local/docs/LN123/id_ocr.pdf'
 
     user_resp = client.get('/admin/v1/users/U1', headers=headers)
     assert user_resp.status_code == 200
@@ -373,6 +379,16 @@ def test_application_filters(client):
     resp_repeat_no = client.get('/admin/v1/applications', headers=headers, params={'repeat': 'no'})
     assert resp_repeat_no.status_code == 200
     assert resp_repeat_no.json()['total'] == 1
+
+    phone_resp = client.get('/admin/v1/applications', headers=headers, params={'phone': '1123'})
+    assert phone_resp.status_code == 200
+    assert phone_resp.json()['total'] == 1
+    assert phone_resp.json()['list'][0]['id'] == 'LN123'
+
+    channel_resp = client.get('/admin/v1/applications', headers=headers, params={'channel': 'Affiliate'})
+    assert channel_resp.status_code == 200
+    assert channel_resp.json()['total'] == 1
+    assert channel_resp.json()['list'][0]['id'] == 'LN124'
 
     loan_resp = client.get('/admin/v1/applications', headers=headers, params={'loanId': 'LN777'})
     assert loan_resp.status_code == 200

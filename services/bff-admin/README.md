@@ -4,7 +4,7 @@
 
 ## 功能
 - `POST /admin/v1/auth/login` + `GET /admin/v1/auth/me`：基于 SQLite `admin.db` 中的账号发放 JWT（作用域 `admin`），支持自定义账号列表与密码盐。
-- `GET /admin/v1/applications`：分页返回贷款申请及账单状态，支持 `status`/`userId`/`loanId`/`keyword` 查询。
+- `GET /admin/v1/applications`：分页返回贷款申请及账单状态，支持 `status`/`userId`/`loanId`/`keyword`/`phone`/`channel`/`repeat` 等过滤，并回传真实渠道/手机号/标签/复借状态。
 - `GET /admin/v1/applications/{id}`：聚合基本信息/客户画像/审批记录/文档列表。
 - `POST /admin/v1/applications/export`：生成导出任务占位符（`taskId`）。
 - `GET /admin/v1/users/{userId}`：从 `user.db` 的设备/kyc 表推导档案视图。
@@ -35,6 +35,12 @@ uvicorn app.main:app --reload --port 8002
 | `ADMIN_PASSWORD_SALT` | `bff-admin-static-salt` | 登录密码 PBKDF2 盐（修改后需重新 seed） |
 | `ADMIN_USERS` | 内置 3 个账号 | 可通过 `.env` 重写 JSON |
 
+### Application Profiles（phone/channel/documents）
+
+- 启动阶段会在 `ADMIN_DB_PATH` 创建 `application_profiles` 表，字段包括 `loan_id`、`phone`、`channel`、`reviewer`、`tags_json`、`documents_json`、`is_repeat`。
+- 默认 seed 三份示例（`LN123/LN124/LN777`），并随着 `ensure_application_profiles` 调用持续 upsert，可自行在 SQLite 中新增记录。
+- `/admin/v1/applications*` 会读取该表：列表返回真实电话/渠道/标签/复借状态，详情的 `documents` 列表也来源于 `documents_json`，front-end 可直接沉底下载链接。
+
 ### 认证与调试
 
 - 首次启动时会自动在 `ADMIN_DB_PATH` 初始化 `admin_users` 表，并使用 `ADMIN_USERS` 中的默认账号/密码进行 seed。
@@ -48,6 +54,11 @@ TOKEN=$(curl -s http://localhost:8002/admin/v1/auth/login \
 
 # 查看当前会话
 curl http://localhost:8002/admin/v1/auth/me -H "Authorization: Bearer $TOKEN"
+
+# 按手机号 + 渠道过滤应用，并获取真实文档
+curl "http://localhost:8002/admin/v1/applications?phone=1123&channel=Google%20Ads" \
+  -H "Authorization: Bearer $TOKEN" | jq '.list[0]'
+curl http://localhost:8002/admin/v1/applications/LN123 -H "Authorization: Bearer $TOKEN" | jq '.documents'
 ```
 
 ## 本地验证

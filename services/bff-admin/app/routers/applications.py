@@ -61,6 +61,9 @@ def list_application_view(
         start_date=start_ts,
         end_date=end_ts,
         limit=settings.max_application_rows,
+        phone=phone,
+        channel=channel,
+        repeat=repeat,
     )
     records: List[ApplicationRecord] = [_to_application_record(row, settings) for row in rows]
     filtered_records = _apply_application_filters(
@@ -118,7 +121,7 @@ def get_application_detail(loan_id: str, settings: Settings = Depends(get_settin
         riskScore=record.riskScore,
         reasons=record.tags or ['系统自动决策'],
     )
-    documents = _build_documents(record)
+    documents = _build_documents(record, data.get('documents'))
     return ApplicationDetail(
         application=record,
         basic=basic,
@@ -140,26 +143,31 @@ def _to_application_record(row: dict, settings: Settings) -> ApplicationRecord:
     created = _format_time(row['createdAt'])
     device = get_latest_device(str(settings.user_db_path), row['userId'])
     loan_count = count_loans_for_user(settings, row['userId'])
-    repeat = loan_count > 1
+    profile_repeat = row.get('isRepeat')
+    repeat = bool(profile_repeat) if profile_repeat is not None else loan_count > 1
     status_label = STATUS_LABELS.get(row['status'], row['status'])
     last_paid = row.get('lastPaidAt')
+    phone = row.get('phone') or _fake_phone(row['userId'])
+    channel = row.get('channel') or _derive_channel(row.get('productId'), row['userId'])
+    reviewer = row.get('reviewer') or _derive_reviewer(repeat)
+    tags = row.get('tags') or (['自动导入'] if row.get('decision') else [])
     return ApplicationRecord(
         id=row['id'],
         userId=row['userId'],
         product=row['product'],
         productId=row['productId'],
         name=f"Borrower {row['userId']}",
-        phone=_fake_phone(row['userId']),
-        channel=_derive_channel(row['productId'], row['userId']),
+        phone=phone,
+        channel=channel,
         level=_derive_level(loan_count),
         amount=row['amount'],
         term=f"{row.get('termDays', 0)}D",
-        reviewer=_derive_reviewer(repeat),
+        reviewer=reviewer,
         status=status_label,
         statusCode=row.get('statusCode'),
         submittedAt=created,
         appVersion=device['app_version'] if device else None,
-        tags=['自动导入'] if row.get('decision') else [],
+        tags=tags,
         repeat=repeat,
         riskScore=row.get('score'),
         autoDecision=row.get('decision'),
@@ -194,7 +202,19 @@ def _build_approval(record: ApplicationRecord) -> List[ApprovalNode]:
     ]
 
 
-def _build_documents(record: ApplicationRecord) -> List[ApplicationDocument]:
+def _build_documents(record: ApplicationRecord, attachments: Optional[List[dict]]) -> List[ApplicationDocument]:
+    documents: List[ApplicationDocument] = []
+    if attachments:
+        for item in attachments:
+            documents.append(
+                ApplicationDocument(
+                    type=item.get('type', '附件'),
+                    name=item.get('name', item.get('type', '附件')),
+                    url=item.get('url', ''),
+                    updatedAt=item.get('updatedAt') or record.submittedAt,
+                )
+            )
+        return documents
     base_url = f'https://static.local/contracts/{record.id}'
     return [
         ApplicationDocument(type='OCR', name='身份证', url=f'{base_url}/ocr.pdf', updatedAt=record.submittedAt),

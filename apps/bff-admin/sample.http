@@ -1,13 +1,18 @@
 # 先运行“Admin Login”，将返回的 accessToken 粘贴到下方变量
 @adminToken = REPLACE_WITH_ACCESS_TOKEN
 
-### List Applications
-GET http://localhost:8002/admin/v1/applications?status=APPROVED&page=1&pageSize=20
+### List Applications（含手机号/渠道/复借筛选）
+GET http://localhost:8002/admin/v1/applications?status=SUBMITTED&phone=1123&channel=Google%20Ads&repeat=yes&page=1&pageSize=20
 Accept: application/json
 Authorization: Bearer {{adminToken}}
 
-### Application Detail
-GET http://localhost:8002/admin/v1/applications/LN202510200001
+### Application Detail（真实文档、标签）
+GET http://localhost:8002/admin/v1/applications/LN123
+Accept: application/json
+Authorization: Bearer {{adminToken}}
+
+### Application Detail - 另一个示例
+GET http://localhost:8002/admin/v1/applications/LN124
 Accept: application/json
 Authorization: Bearer {{adminToken}}
 
