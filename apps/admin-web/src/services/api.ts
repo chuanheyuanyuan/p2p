@@ -240,7 +240,23 @@ export async function fetchReportCenter(params: ReportCenterQuery): Promise<Repo
     }
     const query = search.toString();
     const endpoint = query ? `/admin/v1/reports/center?${query}` : '/admin/v1/reports/center';
-    return await request<ReportCenterData>(endpoint);
+    const resp = await request<ReportCenterData>(endpoint);
+    const normalizedFunnel = (resp.channelFunnel ?? []).map((item) => {
+      const installs = Number(item.installs ?? 0);
+      const regs = Number((item as any).regs ?? (item as any).registrations ?? 0);
+      const applies = Number(item.applies ?? (item as any).applications ?? 0);
+      const disburses = Number(item.disburses ?? (item as any).disbursements ?? 0);
+      const conversion = applies > 0 ? Number(((disburses / applies) * 100).toFixed(1)) : 0;
+      return {
+        ...item,
+        installs,
+        regs,
+        applies,
+        disburses,
+        conversion
+      };
+    });
+    return { ...resp, channelFunnel: normalizedFunnel };
   } catch (error) {
     console.warn('fetchReportCenter fallback', error);
     return {

@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     collection_base_url: str = 'http://127.0.0.1:8086'
     report_base_url: str = 'http://127.0.0.1:8012'
     user_base_url: str = 'http://127.0.0.1:8081'
+    channel_base_url: str = 'http://127.0.0.1:8011'
     jwt_secret: str = 'admin-bff-secret'
     jwt_algorithm: str = 'HS256'
     session_ttl_seconds: int = 3600
@@ -76,6 +77,7 @@ class Settings(BaseSettings):
     payment_db_path: Path = Field(default=SERVICES_DIR / 'payment-svc' / 'payment.db')
     collection_db_path: Path = Field(default=SERVICES_DIR / 'collection-svc' / 'collection.db')
     user_db_path: Path = Field(default=SERVICES_DIR / 'user-svc' / 'user.db')
+    channel_db_path: Path = Field(default=SERVICES_DIR / 'channel-svc' / 'channel.db')
     max_application_rows: int = 1000
     ledger_db_path: Path = Field(default=SERVICES_DIR / 'ledger-svc' / 'ledger.db')
     admin_db_path: Path = Field(default=BASE_DIR / 'admin.db')

@@ -167,3 +167,15 @@
 - `临时文件` 中记录了手动验证脚本，可按 “loan → payment → ledger → collection” 顺序跑通，并通过 `sqlite3` 查询验证入库数据。
 - ledger-svc 新 repository 使用 JSON 序列化分录行写入 DB；collection-svc 新增 `/events/loan`、`/events/payment` 接口并持久化催收案件/行动，事件日志输出保持不变。
 - 待办：根据需要把 SQLite 替换为 Postgres/Redis，并为 ledger-svc/collection-svc 增加查询接口或迁移脚本。
+
+## TODO / 下一步（迭代内）
+- [x] report-svc 聚合 channel-svc 漏斗：新增 `channel_db_path` 配置与 `metrics.channelFunnel`，README 说明渠道来源。
+- [x] bff-admin Dashboard 拉通渠道漏斗（读取 channel.db，输出 `channelFunnel`，今日 installs/regs 汇总），测试已更新。
+- [x] bff-admin 新增 `/admin/v1/reports/center` 与导出，聚合放款/逾期率/渠道漏斗（含 conversion/spend），Admin Web 报表中心可直接调用。
+- [x] Admin Web 报表中心透传渠道漏斗：API 映射 bff-admin 响应（registrations/applies/disbursements → regs/applies/disburses），自动计算 conversion，兼容 spend；Vitest 通过。
+- [x] 清理错误还款记录 `txn_ref=TXN123` 并重算 2025-11-26 日报（当前 repayments=1，repaymentAmount=300.0000）。
+- [x] 增加 `.env.example`（auth-svc/observability），要求替换默认 JWT/OTP Secret。
+- [x] 写入渠道归因样例并验证 `metrics.channelFunnel`。
+- [ ] FastAPI 生命周期迁移到 lifespan + 接入 OTel（trace/log/metrics）与统一 JWT 校验（含 audit-svc introspection）。
+- [ ] 报表中心对齐渠道指标：channel-svc 数据入库 ClickHouse/Kafka 管道并在 BFF/Admin Web 契约中返回渠道漏斗/成本。
+- [ ] 保持数据清洁：备份或重放链路前清空 SQLite（loan/payment/collection/channel），防止脏数据影响报表。

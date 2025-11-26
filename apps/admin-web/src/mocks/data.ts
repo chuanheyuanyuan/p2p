@@ -66,6 +66,7 @@ export interface ChannelFunnelRow {
   applies: number;
   disburses: number;
   conversion: number;
+  spend?: string | number;
 }
 
 export interface ReborrowRateRow {

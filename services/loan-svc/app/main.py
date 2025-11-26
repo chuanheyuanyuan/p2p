@@ -101,6 +101,14 @@ def apply_repayment(payload: RepaymentApplyRequest, loan_id: str = Path(...)) ->
         currency=payload.currency,
         paid_at=payload.paidAt
     )
+    return RepaymentApplyResponse(
+        loanId=loan_id,
+        appliedAmount=applied,
+        remainingDue=schedule.outstanding_amount,
+        currency=schedule.currency,
+        status=schedule.status,
+        lastPaidAt=schedule.last_paid_at
+    )
 
 
 @app.get('/loans/{loan_id}', response_model=LoanDetailResponse)
@@ -173,32 +181,3 @@ def list_user_loans(
     loans = list_applications_by_user(user_id, limit=limit, status=status)
     items = [_loan_item_with_schedule(app_model) for app_model in loans]
     return LoanListResponse(items=items)
-
-
-def _loan_item_with_schedule(app_model: LoanApplication) -> dict:
-    schedule = get_schedule(app_model.loan_id)
-    outstanding = schedule.outstanding_amount if schedule else 0
-    original = schedule.original_amount if schedule else 0
-    last_paid = schedule.last_paid_at if schedule else None
-    return {
-        'loanId': app_model.loan_id,
-        'productId': app_model.product_id,
-        'amount': app_model.requested_amount,
-        'termDays': app_model.term_days,
-        'status': app_model.status,
-        'decision': app_model.decision_reason,
-        'score': app_model.score,
-        'createdAt': app_model.created_at,
-        'updatedAt': app_model.updated_at,
-        'outstandingAmount': outstanding,
-        'originalAmount': original,
-        'lastPaidAt': last_paid,
-    }
-    return RepaymentApplyResponse(
-        loanId=loan_id,
-        appliedAmount=applied,
-        remainingDue=schedule.outstanding_amount,
-        currency=schedule.currency,
-        status=schedule.status,
-        lastPaidAt=schedule.last_paid_at
-    )

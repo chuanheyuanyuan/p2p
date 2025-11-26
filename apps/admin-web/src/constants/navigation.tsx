@@ -80,6 +80,5 @@ export const routeRoleMap: Record<string, AdminRole[]> = {
   '/case-detail': collectionsRoles,
   '/ops': opsRoles,
   '/app-upgrade': opsRoles,
-  '/channel': channelRoles,
-  '/finance': financeRoles
+  '/channel': channelRoles
 };

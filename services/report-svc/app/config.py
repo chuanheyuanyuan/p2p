@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     payment_db_path: Path = Field(default=SERVICES_DIR / 'payment-svc' / 'payment.db')
     collection_db_path: Path = Field(default=SERVICES_DIR / 'collection-svc' / 'collection.db')
     ledger_db_path: Path = Field(default=SERVICES_DIR / 'ledger-svc' / 'ledger.db')
+    channel_db_path: Path = Field(default=SERVICES_DIR / 'channel-svc' / 'channel.db')
 
     class Config:
         env_file = '.env'

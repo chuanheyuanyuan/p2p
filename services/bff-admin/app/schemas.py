@@ -274,12 +274,55 @@ class DashboardConversion(BaseModel):
     denominator: int
 
 
+class ChannelFunnelRow(BaseModel):
+    channel: str
+    installs: int
+    registrations: int
+    applications: int
+    disbursements: int
+    spend: str
+    conversion: float = Field(default=0.0, description='disburse / apply 转化率，百分比')
+
+
 class DashboardStats(BaseModel):
     kpis: List[DashboardKpi]
     overdue: DashboardOverdue
     recovery: DashboardRecovery
     today: DashboardToday
     conversion: DashboardConversion
+    channelFunnel: List[ChannelFunnelRow] = Field(default_factory=list)
+
+
+class ReportSummaryItem(BaseModel):
+    label: str
+    value: str
+    delta: float = 0.0
+    description: str = ''
+
+
+class OverdueMigrationRow(BaseModel):
+    stage: str
+    todayRate: float
+    yesterdayRate: float
+    change: float
+    note: Optional[str] = None
+
+
+class ReborrowRateRow(BaseModel):
+    segment: str
+    rate: float
+    change: float
+    volume: int
+
+
+class ReportCenterResponse(BaseModel):
+    summary: List[ReportSummaryItem]
+    overdueMigration: List[OverdueMigrationRow]
+    channelFunnel: List[ChannelFunnelRow]
+    reborrowRates: List[ReborrowRateRow]
+    filters: dict
+    lastUpdated: str
+    notes: List[str] = Field(default_factory=list)
 
 
 class DailyStat(BaseModel):

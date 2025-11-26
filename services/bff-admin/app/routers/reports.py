@@ -16,8 +16,13 @@ from ..schemas import (
     DashboardRecovery,
     DashboardStats,
     DashboardToday,
+    ChannelFunnelRow,
     DailyStat,
     PaginatedDailyStats,
+    ReportCenterResponse,
+    ReportSummaryItem,
+    OverdueMigrationRow,
+    ReborrowRateRow,
 )
 
 router = APIRouter(prefix='/admin/v1', tags=['Reports'], dependencies=[Depends(get_current_admin)])
@@ -46,16 +51,26 @@ def dashboard(settings: Settings = Depends(get_settings)) -> DashboardStats:
         progress=min(100.0, metrics['repayments'] * 5.0),
     )
     recovery = DashboardRecovery(cases=int(metrics['activeCases']), assigned=int(metrics['casesOpened']), note='自动分案中')
+    channel_funnel = [ChannelFunnelRow(**row) for row in metrics.get('channelFunnel', [])]
+    installs = sum(item.installs for item in channel_funnel)
+    regs = sum(item.registrations for item in channel_funnel)
     today_metrics = DashboardToday(
-        installs=0,
-        regs=0,
+        installs=installs,
+        regs=regs,
         logins=0,
         applies=int(metrics['applications']),
         disburses=int(metrics['disbursements']),
         repayments=int(metrics['repayments']),
     )
     conversion = DashboardConversion(percent=conversion_percent, numerator=int(numerator), denominator=int(denominator))
-    return DashboardStats(kpis=kpis, overdue=overdue, recovery=recovery, today=today_metrics, conversion=conversion)
+    return DashboardStats(
+        kpis=kpis,
+        overdue=overdue,
+        recovery=recovery,
+        today=today_metrics,
+        conversion=conversion,
+        channelFunnel=channel_funnel,
+    )
 
 
 @router.get('/reports/daily', response_model=PaginatedDailyStats)
@@ -100,6 +115,70 @@ def daily_stats(
 @router.post('/reports/daily/export')
 def export_daily() -> dict:
     return {'taskId': f'daily-export-{int(datetime.utcnow().timestamp())}'}
+
+
+@router.get('/reports/center', response_model=ReportCenterResponse)
+def report_center(
+    businessDate: Optional[str] = Query(default=None),
+    channel: Optional[str] = Query(default=None),
+    product: Optional[str] = Query(default=None),
+    settings: Settings = Depends(get_settings),
+) -> ReportCenterResponse:
+    target_date = _parse_date(businessDate) or date.today()
+    calculator = MetricsCalculator(settings)
+    metrics = calculator.calculate(target_date)
+    disb_amount = Decimal(metrics.get('disbursementAmount') or '0')
+    disb_count = int(metrics.get('disbursements') or 0)
+    overdue_rate = _calc_overdue_rate(int(metrics.get('activeCases', 0)), max(int(metrics.get('applications', 0)), 1))
+    summary = [
+        ReportSummaryItem(label='放款金额', value=f"₵{disb_amount:,.0f}", delta=0.0, description='环比昨日'),
+        ReportSummaryItem(label='放款笔数', value=str(disb_count), delta=0.0, description='环比昨日'),
+        ReportSummaryItem(label='逾期率 (D1+)', value=f"{overdue_rate}%", delta=0.0, description='较昨日'),
+        ReportSummaryItem(label='复借率', value='0%', delta=0.0, description='预研中'),
+    ]
+    channel_funnel_rows: List[ChannelFunnelRow] = []
+    for row in metrics.get('channelFunnel', []):
+        applies = int(row.get('applications') or 0)
+        disburses = int(row.get('disbursements') or 0)
+        conversion = round((disburses / applies) * 100, 1) if applies > 0 else 0.0
+        channel_funnel_rows.append(
+            ChannelFunnelRow(
+                channel=row.get('channel') or 'unknown',
+                installs=int(row.get('installs') or 0),
+                registrations=int(row.get('registrations') or 0),
+                applications=applies,
+                disbursements=disburses,
+                spend=str(row.get('spend') or '0.0000'),
+                conversion=conversion,
+            )
+        )
+    overdue_migration = [
+        OverdueMigrationRow(stage='D0->D1', todayRate=overdue_rate, yesterdayRate=max(overdue_rate - 1, 0), change=-1.0),
+        OverdueMigrationRow(stage='D1->D7', todayRate=max(overdue_rate - 5, 0), yesterdayRate=max(overdue_rate - 4, 0), change=-1.0),
+    ]
+    reborrow_rates = [
+        ReborrowRateRow(segment='整体', rate=0.0, change=0.0, volume=0),
+    ]
+    return ReportCenterResponse(
+        summary=summary,
+        overdueMigration=overdue_migration,
+        channelFunnel=channel_funnel_rows,
+        reborrowRates=reborrow_rates,
+        filters={
+            'businessDate': target_date.isoformat(),
+            'channel': channel,
+            'product': product,
+        },
+        lastUpdated=datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+        notes=[],
+    )
+
+
+@router.post('/reports/center/export')
+def export_report_center(businessDate: Optional[str] = Query(default=None)) -> dict:
+    ts = int(datetime.utcnow().timestamp())
+    day = _parse_date(businessDate) or date.today()
+    return {'taskId': f'report-center-{day.isoformat()}-{ts}'}
 
 
 def _parse_date(value: Optional[str]) -> Optional[date]:

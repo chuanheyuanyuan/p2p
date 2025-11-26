@@ -47,6 +47,7 @@ class DailyMetricsCalculator:
             "SELECT applied_amount FROM repayments WHERE status = 'POSTED' AND DATE(paid_at) = ?",
             (day_str,),
         )
+        channel_funnel = self._channel_funnel(day_str)
         cases_opened = self._count(
             self.settings.collection_db_path,
             'SELECT COUNT(*) FROM collection_cases WHERE DATE(created_at) = ?',
@@ -75,6 +76,7 @@ class DailyMetricsCalculator:
                 'casesClosed': cases_closed,
                 'activeCases': active_cases,
                 'bucketBreakdown': bucket_breakdown.by_bucket,
+                'channelFunnel': channel_funnel,
             }
         )
 
@@ -85,6 +87,8 @@ class DailyMetricsCalculator:
             notes.append('payment.db 未找到，放款/还款指标默认为 0')
         if not self.settings.collection_db_path.exists():
             notes.append('collection.db 未找到，催收指标默认为 0')
+        if not self.settings.channel_db_path.exists():
+            notes.append('channel.db 未找到，渠道漏斗指标默认为空')
         if applications == 0:
             missing_metrics.append('applications')
         if disbursements == 0 and disbursement_amount == Decimal('0'):
@@ -179,4 +183,41 @@ class DailyMetricsCalculator:
             'paymentDb': self.settings.payment_db_path.exists(),
             'collectionDb': self.settings.collection_db_path.exists(),
             'ledgerDb': self.settings.ledger_db_path.exists(),
+            'channelDb': self.settings.channel_db_path.exists(),
         }
+
+    def _channel_funnel(self, business_day: str) -> List[Dict[str, object]]:
+        """
+        聚合 channel-svc 渠道漏斗数据，默认按单日汇总。
+        """
+        if not self.settings.channel_db_path.exists():
+            return []
+
+        sql = """
+        SELECT
+            channel,
+            SUM(CASE WHEN event='install' THEN 1 ELSE 0 END) as installs,
+            SUM(CASE WHEN event='register' THEN 1 ELSE 0 END) as registrations,
+            SUM(CASE WHEN event='apply' THEN 1 ELSE 0 END) as applications,
+            SUM(CASE WHEN event='disburse' THEN 1 ELSE 0 END) as disbursements,
+            SUM(CASE WHEN event='install' THEN cost ELSE 0 END) as spend
+        FROM channel_attributions
+        WHERE DATE(occurred_at) = ?
+        GROUP BY channel
+        ORDER BY channel
+        """
+        rows: List[Dict[str, object]] = []
+        with sqlite3.connect(self.settings.channel_db_path, check_same_thread=False) as conn:
+            conn.row_factory = sqlite3.Row
+            for row in conn.execute(sql, (business_day,)).fetchall():
+                rows.append(
+                    {
+                        'channel': row['channel'],
+                        'installs': row['installs'],
+                        'registrations': row['registrations'],
+                        'applications': row['applications'],
+                        'disbursements': row['disbursements'],
+                        'spend': self._format_decimal(Decimal(str(row['spend'] or 0))),
+                    }
+                )
+        return rows

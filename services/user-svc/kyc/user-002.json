@@ -1,0 +1,11 @@
+{
+  "status": "APPROVED",
+  "docType": "ID_CARD",
+  "docNumber": "ID654321",
+  "selfieUrl": "https://s3/selfie2.jpg",
+  "docFrontUrl": null,
+  "docBackUrl": null,
+  "meta": null,
+  "reviewer": null,
+  "reviewedAt": null
+}

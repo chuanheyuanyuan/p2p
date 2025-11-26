@@ -65,6 +65,7 @@ class MetricsCalculator:
             "SELECT COUNT(*) FROM collection_cases WHERE status NOT IN ('PAID','WRITE_OFF')",
         )
         metrics['bucketBreakdown'] = self._bucket_breakdown()
+        metrics['channelFunnel'] = self._channel_funnel(ds)
         metrics['generatedAt'] = datetime.utcnow().isoformat() + 'Z'
         return metrics
 
@@ -106,3 +107,42 @@ class MetricsCalculator:
 
     def _format_decimal(self, value: Decimal) -> str:
         return str(value.quantize(Decimal('0.0000'), rounding=ROUND_HALF_UP))
+
+    def _channel_funnel(self, business_day: str) -> list[dict]:
+        """
+        读取 channel.db 汇总单日漏斗，若库不存在则返回空列表。
+        """
+        path = self.settings.channel_db_path
+        if not path.exists():
+            return []
+        sql = """
+        SELECT
+            channel,
+            SUM(CASE WHEN event='install' THEN 1 ELSE 0 END) as installs,
+            SUM(CASE WHEN event='register' THEN 1 ELSE 0 END) as registrations,
+            SUM(CASE WHEN event='apply' THEN 1 ELSE 0 END) as applications,
+            SUM(CASE WHEN event='disburse' THEN 1 ELSE 0 END) as disbursements,
+            SUM(CASE WHEN event='install' THEN cost ELSE 0 END) as spend
+        FROM channel_attributions
+        WHERE DATE(occurred_at) = ?
+        GROUP BY channel
+        ORDER BY channel
+        """
+        rows: list[dict] = []
+        try:
+            with sqlite3.connect(path, check_same_thread=False) as conn:
+                conn.row_factory = sqlite3.Row
+                for row in conn.execute(sql, (business_day,)).fetchall():
+                    rows.append(
+                        {
+                            'channel': row['channel'],
+                            'installs': row['installs'],
+                            'registrations': row['registrations'],
+                            'applications': row['applications'],
+                            'disbursements': row['disbursements'],
+                            'spend': self._format_decimal(Decimal(str(row['spend'] or 0))),
+                        }
+                    )
+        except sqlite3.Error:
+            return []
+        return rows

@@ -365,6 +365,7 @@ def test_collections_and_reports(client):
 
     dashboard = client.get('/admin/v1/dashboard', headers=headers)
     assert dashboard.status_code == 200
+    assert 'channelFunnel' in dashboard.json()
     daily = client.get('/admin/v1/reports/daily', headers=headers)
     assert daily.status_code == 200
     assert daily.json()['total'] >= 1
